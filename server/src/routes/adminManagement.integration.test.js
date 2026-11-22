@@ -72,7 +72,9 @@ test('admin management APIs enforce roles and manage academic structure and acco
     const newClass = (await newClassResponse.json()).record
     assert.equal((await asAdmin('/classes', { method: 'POST', body: JSON.stringify({ name: 'Invalid Class', classCode: `IC${suffix}`, department: 'not-an-object-id' }) })).status, 400)
     assert.equal((await asAdmin(`/classes/${newClass._id}`, { method: 'PUT', body: JSON.stringify({ name: 'Edited Class', level: 'Year 2' }) })).status, 200)
-    assert.equal((await asAdmin(`/classes/${academicClass._id}`, { method: 'DELETE' })).status, 404)
+    // Classes can be deleted by an administrator (related data is removed with them).
+    assert.equal((await asAdmin(`/classes/${newClass._id}`, { method: 'DELETE' })).status, 200)
+    assert.equal((await asAdmin(`/classes/${newClass._id}`)).status, 404)
     assert.equal((await asAdmin(`/classes?faculty=${otherFaculty._id}&limit=1&page=1`)).status, 200)
 
     const createdTeacherResponse = await asAdmin('/teachers', { method: 'POST', body: JSON.stringify({ fullName: 'Created Teacher', email: `created_teacher${suffix}@example.edu`, password: 'CreateTeacher123', department: department._id, assignedClasses: [academicClass._id, secondClass._id] }) })

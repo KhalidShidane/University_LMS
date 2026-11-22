@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { adminResetTwoFactor } from '../controllers/twoFactor.controller.js'
 import multer from 'multer'
 import asyncHandler from '../middleware/asyncHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js'
@@ -19,15 +20,17 @@ import {
   updateAcademicStatus,
   updateManagedUserStatus,
   updateStudent,
+  createStudent,
   updateTeacher,
   updateTeacherClasses,
 } from '../controllers/adminManagement.controller.js'
 import { adminAnalyticsDirectory, adminAnalyticsOverview, adminAnalyticsPerformance } from '../controllers/analytics.controller.js'
 import { exportAuditLogs, getAuditLog, getSystemHealth, getSystemSettings, listAuditLogs, updateSystemSettings } from '../controllers/systemAdmin.controller.js'
 import { recordAudit } from '../services/auditLog.service.js'
-import { assignCourseTeacher, createAdminCourse, deleteAdminCourse, getCourseCover, listAdminCourses, updateAdminCourseStatus, updateCourseStudent } from '../controllers/courses.controller.js'
+import { assignCourseTeacher, createAdminCourse, deleteAdminCourse, updateAdminCourse, getCourseCover, listAdminCourses, updateAdminCourseStatus, updateCourseStudent } from '../controllers/courses.controller.js'
 import { downloadAcademicTemplate, importAcademicRows } from '../controllers/academicImport.controller.js'
 import { createAnnouncement, listAnnouncements } from '../controllers/announcements.controller.js'
+import { getEmailStatus, testAndResumeEmail } from '../controllers/emailAdmin.controller.js'
 
 const router = Router()
 const courseCoverUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024, files: 1 } })
@@ -59,12 +62,15 @@ router.get('/admin/audit-logs/export', ...protect(exportAuditLogs))
 router.get('/admin/audit-logs', ...protect(listAuditLogs))
 router.get('/admin/audit-logs/:id', ...protect(getAuditLog))
 router.get('/admin/system-health', ...protect(getSystemHealth))
+router.get('/admin/email/status', ...protect(getEmailStatus))
+router.post('/admin/email/test-and-resume', ...protect(testAndResumeEmail))
 router.get('/admin/import/:type/template', ...protect(downloadAcademicTemplate))
 router.post('/admin/import/:type', ...adminOnly, auditAdminMutation, excelUpload.single('file'), asyncHandler(importAcademicRows))
 
 router.get('/admin/dashboard/stats', ...protect(getDashboardStats))
 router.get('/admin/courses', ...protect(listAdminCourses))
 router.post('/admin/courses', ...adminOnly, auditAdminMutation, courseCoverUpload.single('cover'), asyncHandler(createAdminCourse))
+router.put('/admin/courses/:id', ...protect(updateAdminCourse))
 router.patch('/admin/courses/:id/status', ...protect(updateAdminCourseStatus))
 router.delete('/admin/courses/:id', ...protect(deleteAdminCourse))
 router.get('/admin/courses/:id/cover', ...protect(getCourseCover))
@@ -99,10 +105,12 @@ router.patch('/teachers/:id/classes', ...protect(updateTeacherClasses))
 router.patch('/teachers/:id/password', ...protect(resetTeacherPassword))
 
 router.get('/students', ...protect(listStudents))
+router.post('/students', ...protect(createStudent))
 router.get('/students/:id', ...protect(getStudent))
 router.put('/students/:id', ...protect(updateStudent))
 router.delete('/students/:id', ...protect((req, res) => { req.params.type = 'students'; return deleteAdminManagedRecord(req, res) }))
 router.patch('/students/:id/status', ...protect(updateManagedUserStatus))
 router.patch('/students/:id/password', ...protect(resetStudentPassword))
+router.post('/users/:id/2fa/reset', ...protect(adminResetTwoFactor))
 
 export default router

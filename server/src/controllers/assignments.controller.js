@@ -20,6 +20,7 @@ import {
 } from '../services/assignmentFiles.service.js'
 import { notifyClassStudents, createNotification } from '../services/notifications.service.js'
 import { loadSystemSettings } from '../services/systemSettings.service.js'
+import { emailAssignmentPublished, queueEmailTask } from '../services/emailNotifications.service.js'
 
 const statuses = ['draft', 'published', 'closed']
 const paging = (query) => {
@@ -159,7 +160,7 @@ export async function createTeacherAssignment(req, res) {
     totalMarks,
     status: body.status || (body.isPublished === false ? 'draft' : 'published'),
   })
-  if (statusOf(assignment) === 'published') await notifyClassStudents(assignment.class, { type: 'new_assignment', title: 'New assignment available', message: `${assignment.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'assignment', relatedEntityId: assignment._id }, `assignment-published:${assignment._id}`)
+  if (statusOf(assignment) === 'published') { await notifyClassStudents(assignment.class, { type: 'new_assignment', title: 'New assignment available', message: `${assignment.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'assignment', relatedEntityId: assignment._id }, `assignment-published:${assignment._id}`); queueEmailTask('assignment', () => emailAssignmentPublished(assignment._id)) }
   await assignment.populate('class', 'name classCode')
   return res.status(201).json({ success: true, assignment: { ...assignment.toObject(), status: statusOf(assignment), totalMarks } })
 }
@@ -202,7 +203,7 @@ export async function updateTeacherAssignment(req, res) {
     assignment.status = body.status
   } else if (typeof body.isPublished === 'boolean') assignment.status = body.isPublished ? 'published' : 'draft'
   await assignment.save()
-  if (!wasPublished && statusOf(assignment) === 'published') await notifyClassStudents(assignment.class, { type: 'new_assignment', title: 'New assignment available', message: `${assignment.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'assignment', relatedEntityId: assignment._id }, `assignment-published:${assignment._id}`)
+  if (!wasPublished && statusOf(assignment) === 'published') { await notifyClassStudents(assignment.class, { type: 'new_assignment', title: 'New assignment available', message: `${assignment.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'assignment', relatedEntityId: assignment._id }, `assignment-published:${assignment._id}`); queueEmailTask('assignment', () => emailAssignmentPublished(assignment._id)) }
   await assignment.populate('class', 'name classCode')
   return res.json({ success: true, assignment: { ...assignment.toObject(), attachments: publicAttachments(assignment.attachments), status: statusOf(assignment), totalMarks: totalMarksOf(assignment), maxScore: totalMarksOf(assignment) } })
 }
@@ -216,7 +217,7 @@ export async function updateTeacherAssignmentStatus(req, res) {
   const wasPublished = statusOf(assignment) === 'published'
   assignment.status = status
   await assignment.save()
-  if (!wasPublished && statusOf(assignment) === 'published') await notifyClassStudents(assignment.class, { type: 'new_assignment', title: 'New assignment available', message: `${assignment.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'assignment', relatedEntityId: assignment._id }, `assignment-published:${assignment._id}`)
+  if (!wasPublished && statusOf(assignment) === 'published') { await notifyClassStudents(assignment.class, { type: 'new_assignment', title: 'New assignment available', message: `${assignment.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'assignment', relatedEntityId: assignment._id }, `assignment-published:${assignment._id}`); queueEmailTask('assignment', () => emailAssignmentPublished(assignment._id)) }
   return res.json({ success: true, assignment: { id: assignment._id, status: assignment.status, isPublished: assignment.isPublished } })
 }
 

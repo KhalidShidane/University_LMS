@@ -10,4 +10,8 @@
 .notification-popover-item { display: grid; width: 100%; grid-template-columns: 7px minmax(0,1fr); align-items: start; gap: 9px; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--line); color: inherit; background: var(--surface); text-align: left; cursor: pointer; }.notification-popover-item:hover { background: var(--surface-2); }.notification-popover-item > i { width: 6px; height: 6px; margin-top: 5px; border-radius: 50%; background: transparent; }.notification-popover-item.notification-unread > i { background: var(--blue); }.notification-popover-item > span { display: grid; gap: 4px; min-width: 0; }.notification-popover-item b { color: var(--ink-2); font-size: 10px; }.notification-popover-item small { overflow: hidden; color: var(--muted); font-size: 9px; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }.notification-popover-item time { color: var(--muted); font-size: 8px; }
 .notification-popover-empty { margin: 0; padding: 26px 16px; color: var(--muted); font-size: 10px; text-align: center; }
 .notification-view-all { display: flex; width: 100%; align-items: center; justify-content: center; gap: 5px; min-height: 40px; border: 0; color: var(--blue); background: var(--surface); font-size: 10px; font-weight: 650; cursor: pointer; }.notification-view-all:hover { background: var(--surface-2); }
-@media (max-width: 600px) { .notification-popover { right: -92px; } }
+/* Phones: anchor to the screen, centered under the top bar, equal gap on both sides. */
+@media (max-width: 600px) {
+  .notification-popover { position: fixed; top: 70px; left: 50%; right: auto; width: calc(100vw - 24px); max-width: 420px; transform: translateX(-50%); }
+  .notification-popover-list { max-height: min(360px, calc(100vh - 210px)); }
+}

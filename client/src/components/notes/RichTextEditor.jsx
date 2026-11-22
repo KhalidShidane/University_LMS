@@ -1,15 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
+// TipTap v3: StarterKit already includes Link and Underline; tables and placeholder are named exports.
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
-import Link from '@tiptap/extension-link'
-import Table from '@tiptap/extension-table'
-import TableRow from '@tiptap/extension-table-row'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
-import Placeholder from '@tiptap/extension-placeholder'
-import Mathematics from '@tiptap/extension-mathematics'
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
+import { Placeholder } from '@tiptap/extensions'
+import Mathematics, { migrateMathStrings } from '@tiptap/extension-mathematics'
 import 'katex/dist/katex.min.css'
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Code, Columns3, Italic, Link2, List, ListOrdered,
@@ -87,7 +83,7 @@ function Toolbar({ editor }) {
         <ToolButton icon={Link2} label="Add link" active={editor.isActive('link') || linkOpen} onClick={openLink} />
         {editor.isActive('link') && <ToolButton icon={Unlink} label="Remove link" onClick={() => chain().extendMarkRange('link').unsetLink().run()} />}
         <ToolButton icon={TableIcon} label="Table" active={inTable || tableOpen} onClick={() => { setTableOpen((open) => !open); setLinkOpen(false) }} />
-        <ToolButton icon={Sigma} label="Formula: type LaTeX between $ signs, e.g. $E = mc^2$" onClick={() => chain().insertContent('$x^2$').run()} />
+        <ToolButton icon={Sigma} label="Insert formula (LaTeX). Tip: type $x^2$ to add one inline" onClick={() => { const latex = window.prompt('Formula (LaTeX), for example E = mc^2', 'x^2'); if (latex?.trim()) chain().insertInlineMath({ latex: latex.trim() }).run() }} />
         <ToolButton icon={Minus} label="Divider" onClick={() => chain().setHorizontalRule().run()} />
       </span>
       <span className="note-tool-group">
@@ -121,21 +117,40 @@ function Toolbar({ editor }) {
 export default function RichTextEditor({ content, onChange, placeholder = 'Start writing your notes…', autoFocus = false }) {
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const editorRef = useRef(null)
+  // Click a formula to edit it; an empty value removes it.
+  const editFormula = (type) => (node, pos) => {
+    const current = editorRef.current
+    if (!current) return
+    const latex = window.prompt('Edit formula (LaTeX). Leave empty to remove it.', node.attrs.latex)
+    if (latex === null) return
+    const chain = current.chain().setNodeSelection(pos)
+    if (!latex.trim()) chain.deleteSelection().run()
+    else if (type === 'inline') chain.updateInlineMath({ latex: latex.trim() }).run()
+    else chain.updateBlockMath({ latex: latex.trim() }).run()
+  }
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
-      Underline,
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3, 4] },
+        link: { openOnClick: false, autolink: true, linkOnPaste: true, protocols: ['mailto'], HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' }, isAllowedUri: (href) => Boolean(safeUrl(href)) },
+      }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Link.configure({ openOnClick: false, autolink: true, linkOnPaste: true, protocols: ['mailto'], HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' }, validate: (href) => Boolean(safeUrl(href)) }),
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
       TableCell,
       Placeholder.configure({ placeholder }),
-      Mathematics.configure({ katexOptions: { throwOnError: false } }),
+      Mathematics.configure({
+        katexOptions: { throwOnError: false },
+        inlineOptions: { onClick: editFormula('inline') },
+        blockOptions: { onClick: editFormula('block') },
+      }),
     ],
     content,
     autofocus: autoFocus ? 'end' : false,
+    // Notes written before the v3 upgrade stored formulas as $…$ text: convert them to math nodes.
+    onCreate: ({ editor: current }) => { editorRef.current = current; migrateMathStrings(current) },
     editorProps: { attributes: { class: 'note-prose', spellcheck: 'true', 'aria-label': 'Note content', role: 'textbox', 'aria-multiline': 'true' } },
     onUpdate: ({ editor: current }) => onChangeRef.current?.(() => current.getJSON()),
   })

@@ -172,6 +172,16 @@ export default function AdminUserDetailsPage({ role }) {
     }
   }
 
+  async function resetTwoFactor() {
+    if (!window.confirm('Remove two-step verification from this account? Use this only when the user lost their phone and recovery codes. They will be signed out everywhere.')) return
+    try {
+      const { data } = await api.post(`/users/${id}/2fa/reset`)
+      toast.success(data.message)
+    } catch (requestError) {
+      toast.error(apiErrorMessage(requestError))
+    }
+  }
+
   async function resetPassword(event) {
     event.preventDefault()
     setSaving(true)
@@ -221,7 +231,7 @@ export default function AdminUserDetailsPage({ role }) {
             <div className="form-actions form-grid-span"><button className="button-primary" disabled={saving || !availableCourses.length || !assignmentClass}>{saving ? 'Assigning…' : 'Assign course'}</button></div>
           </form>
         </section> : <section className="panel teacher-course-assignment-panel"><h2>Step 2 · Assign courses</h2><p className="inline-empty">Assign at least one class above to choose a course for this teacher.</p></section>}</>}
-        {['teacher', 'student'].includes(role) && <section className="panel"><div className="panel-heading"><div><h2>Reset password</h2><p>Set a new password for this {role} account.</p></div><KeyRound size={18} className="panel-heading-icon" /></div><form className="form-grid" onSubmit={resetPassword}><label className="form-grid-span">New password<input required type="password" minLength={8} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" /></label><div className="form-actions form-grid-span"><button className="button-secondary" disabled={saving}>{saving ? 'Resettingâ€¦' : 'Reset password'}</button></div></form></section>}</div>
+        {['teacher', 'student'].includes(role) && <section className="panel"><div className="panel-heading"><div><h2>Reset password</h2><p>Set a new password for this {role} account.</p></div><KeyRound size={18} className="panel-heading-icon" /></div><form className="form-grid" onSubmit={resetPassword}><label className="form-grid-span">New password<input required type="password" minLength={8} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" /></label><div className="form-actions form-grid-span"><button className="button-secondary" disabled={saving}>{saving ? 'Resettingâ€¦' : 'Reset password'}</button></div></form></section>}<section className="panel"><div className="panel-heading"><div><h2>Two-step verification</h2><p>If this user lost their phone and recovery codes, remove two-step verification so they can sign in with their password and set it up again.</p></div></div><button type="button" className="button-secondary" onClick={resetTwoFactor}>Reset two-step verification</button></section></div>
     </div>
   </>
 }

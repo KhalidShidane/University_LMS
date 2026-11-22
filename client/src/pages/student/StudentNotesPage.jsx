@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { LoaderCircle, NotebookPen, Plus, Search, TriangleAlert } from 'lucide-react'
-import { apiErrorMessage } from '../../services/api.js'
+import { FolderDown, LoaderCircle, NotebookPen, Plus, Search, TriangleAlert } from 'lucide-react'
+import api, { apiErrorMessage } from '../../services/api.js'
+import { saveBlob } from '../../utils/download.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import NoteList from '../../components/notes/NoteList.jsx'
 import NoteDetail from '../../components/notes/NoteDetail.jsx'
@@ -91,8 +92,24 @@ export default function StudentNotesPage() {
   const filtersActive = Boolean(debouncedSearch || course || lesson || tag)
   const reorderable = sort === 'custom' && !filtersActive && notes.length > 1
 
+  const [downloadingAll, setDownloadingAll] = useState(false)
+  async function downloadAllNotes() {
+    setDownloadingAll(true)
+    try {
+      const response = await api.get('/student/notes/export/all', { responseType: 'blob' })
+      saveBlob(response, 'my-notes.zip')
+      toast.success('Your notes are downloading')
+    } catch (error) {
+      let message = apiErrorMessage(error)
+      try { const text = await error.response?.data?.text?.(); if (text) message = JSON.parse(text).message || message } catch { /* keep message */ }
+      toast.error(message)
+    } finally {
+      setDownloadingAll(false)
+    }
+  }
+
   return <div className={`notes-page ${selectedId ? 'has-selection' : ''} ${expanded ? 'is-expanded' : ''}`}>
-    <div className="section-title-row"><div><div className="section-kicker">STUDY NOTES</div><h1>My notes</h1><p>Your personal notes from every course and lesson, in one place.</p></div><button type="button" className="button-primary" onClick={createNote} disabled={creating}>{creating ? <LoaderCircle size={15} className="spin" /> : <Plus size={15} />} New note</button></div>
+    <div className="section-title-row"><div><div className="section-kicker">STUDY NOTES</div><h1>My notes</h1><p>Your personal notes from every course and lesson, in one place.</p></div><div className="section-title-actions"><button type="button" className="button-secondary" onClick={downloadAllNotes} disabled={downloadingAll}>{downloadingAll ? <LoaderCircle size={15} className="spin" /> : <FolderDown size={15} />} Download all notes</button><button type="button" className="button-primary" onClick={createNote} disabled={creating}>{creating ? <LoaderCircle size={15} className="spin" /> : <Plus size={15} />} New note</button></div></div>
     <div className="notes-page-layout">
       <section className="notes-page-list" aria-label="Notes list">
         <div className="notes-page-filters">

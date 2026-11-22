@@ -23,6 +23,7 @@ async function seedAdmin() {
     email: ADMIN_EMAIL,
     passwordHash: await hashPassword(ADMIN_PASSWORD),
     role: 'admin',
+    emailVerified: true,
   })
   console.info(`Administrator account created for ${ADMIN_EMAIL}`)
 }

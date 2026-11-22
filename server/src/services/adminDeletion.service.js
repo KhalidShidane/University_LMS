@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import Faculty from '../models/Faculty.js'
 import Department from '../models/Department.js'
 import Class from '../models/Class.js'
@@ -14,7 +15,11 @@ import Notification from '../models/Notification.js'
 import { deleteLessonFiles, deleteLessonFile } from './lessonStorage.service.js'
 import { assignmentFilePath, submissionFilePath, removeStoredFile } from './assignmentFiles.service.js'
 
+// Raw collection operations below bypass Mongoose casting, so ids must be real ObjectIds
+// (string ids silently match nothing and leave records behind).
 const uniqueIds = (ids) => [...new Set(ids.filter(Boolean).map(String))]
+  .filter((id) => mongoose.isValidObjectId(id))
+  .map((id) => new mongoose.Types.ObjectId(id))
 
 async function removeAssignments(records) {
   if (!records.length) return

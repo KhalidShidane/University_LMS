@@ -4,7 +4,7 @@ import { validateSettings } from './systemAdmin.controller.js'
 
 const settings = {
   general: { institutionName: 'University', logo: '', contactEmail: 'admin@example.edu', phone: '', address: '', timezone: 'Africa/Nairobi', dateFormat: 'DD/MM/YYYY', timeFormat: '24h' },
-  academic: { academicYear: '2026-27', semester: 'Semester 1', passingMarks: 50, gradingScale: [{ label: 'F', min: 0, max: 49.99 }, { label: 'A', min: 50, max: 100 }] },
+  academic: { academicYear: '2026-27', semester: 'Semester 1', semesters: ['Semester 1', 'Semester 2'], passingMarks: 50, gradingScale: [{ label: 'F', min: 0, max: 49.99 }, { label: 'A', min: 50, max: 100 }] },
   uploads: { maxFileSizeMB: 10, assignmentTypes: ['pdf', 'doc', 'docx', 'ppt', 'pptx'], learningMaterialTypes: ['pdf', 'docx'], profileImageTypes: ['jpg', 'png'] },
 }
 

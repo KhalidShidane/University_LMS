@@ -8,7 +8,7 @@ const MAX_NODES = 250_000
 const MAX_TEXT_INDEX = 500_000
 
 const alignments = new Set(['left', 'center', 'right', 'justify'])
-const blockTypes = new Set(['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'horizontalRule', 'table', 'tableRow', 'tableCell', 'tableHeader'])
+const blockTypes = new Set(['blockMath', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'horizontalRule', 'table', 'tableRow', 'tableCell', 'tableHeader'])
 
 function contentError(message) {
   const error = new Error(message)
@@ -45,6 +45,13 @@ const nodeAttributes = {
   tableRow: () => undefined,
   tableCell: cellAttrs,
   tableHeader: cellAttrs,
+  // Math formulas (TipTap v3 mathematics): only the LaTeX source is stored.
+  inlineMath: (attrs) => ({ latex: mathLatex(attrs) }),
+  blockMath: (attrs) => ({ latex: mathLatex(attrs) }),
+}
+
+function mathLatex(attrs) {
+  return typeof attrs?.latex === 'string' ? attrs.latex.slice(0, 2000) : ''
 }
 
 function safeHref(value) {
@@ -100,6 +107,12 @@ export function sanitizeNoteContent(raw) {
       return marks ? { type, text: node.text, marks } : { type, text: node.text }
     }
     if (type === 'hardBreak') { pushText('\n'); return { type } }
+    if (type === 'inlineMath' || type === 'blockMath') {
+      const latex = mathLatex(node.attrs)
+      if (!latex.trim()) return null
+      pushText(type === 'blockMath' ? `\n${latex}\n` : latex)
+      return { type, attrs: { latex } }
+    }
     const result = { type }
     const attrs = describeAttrs(node.attrs)
     if (attrs) result.attrs = attrs

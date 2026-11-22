@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { emailLessonPublished, emailLessonMaterialsAdded, queueEmailTask } from '../services/emailNotifications.service.js'
 import Assignment from '../models/Assignment.js'
 import Class from '../models/Class.js'
 import Course from '../models/Course.js'
@@ -141,7 +142,7 @@ export async function createLesson(req, res) {
     isPublished: body.isPublished === true,
     createdBy: req.user._id,
   })
-  if (lesson.isPublished) course ? await notifyCourseStudents(course._id, lesson) : await notifyClassStudents(lesson.class, { type: 'new_lesson', title: 'New lesson published', message: `${lesson.title} is now available to your class.`, senderId: req.user._id, relatedEntityType: 'lesson', relatedEntityId: lesson._id }, `lesson-published:${lesson._id}`)
+  if (lesson.isPublished) { course ? await notifyCourseStudents(course._id, lesson) : await notifyClassStudents(lesson.class, { type: 'new_lesson', title: 'New lesson published', message: `${lesson.title} is now available to your class.`, senderId: req.user._id, relatedEntityType: 'lesson', relatedEntityId: lesson._id }, `lesson-published:${lesson._id}`); queueEmailTask('lesson', () => emailLessonPublished(lesson._id)) }
   await lesson.populate('class', 'name classCode')
   await lesson.populate('course', 'name courseCode')
   return res.status(201).json({ success: true, lesson: lesson.toObject() })
@@ -168,7 +169,7 @@ export async function updateLesson(req, res) {
     lesson.status = body.isPublished ? 'published' : 'draft'
   }
   await lesson.save()
-  if (!wasPublished && lesson.isPublished) lesson.course ? await notifyCourseStudents(lesson.course, lesson) : await notifyClassStudents(lesson.class, { type: 'new_lesson', title: 'New lesson published', message: `${lesson.title} is now available to your class.`, senderId: req.user._id, relatedEntityType: 'lesson', relatedEntityId: lesson._id }, `lesson-published:${lesson._id}`)
+  if (!wasPublished && lesson.isPublished) { lesson.course ? await notifyCourseStudents(lesson.course, lesson) : await notifyClassStudents(lesson.class, { type: 'new_lesson', title: 'New lesson published', message: `${lesson.title} is now available to your class.`, senderId: req.user._id, relatedEntityType: 'lesson', relatedEntityId: lesson._id }, `lesson-published:${lesson._id}`); queueEmailTask('lesson', () => emailLessonPublished(lesson._id)) }
   await lesson.populate('class', 'name classCode')
   await lesson.populate('course', 'name courseCode')
   return res.json({ success: true, lesson: lesson.toObject() })
@@ -183,7 +184,7 @@ export async function updateLessonStatus(req, res) {
   const wasPublished = lesson.isPublished
   lesson.status = status
   await lesson.save()
-  if (!wasPublished && lesson.isPublished) lesson.course ? await notifyCourseStudents(lesson.course, lesson) : await notifyClassStudents(lesson.class, { type: 'new_lesson', title: 'New lesson published', message: `${lesson.title} is now available to your class.`, senderId: req.user._id, relatedEntityType: 'lesson', relatedEntityId: lesson._id }, `lesson-published:${lesson._id}`)
+  if (!wasPublished && lesson.isPublished) { lesson.course ? await notifyCourseStudents(lesson.course, lesson) : await notifyClassStudents(lesson.class, { type: 'new_lesson', title: 'New lesson published', message: `${lesson.title} is now available to your class.`, senderId: req.user._id, relatedEntityType: 'lesson', relatedEntityId: lesson._id }, `lesson-published:${lesson._id}`); queueEmailTask('lesson', () => emailLessonPublished(lesson._id)) }
   return res.json({ success: true, lesson: { id: lesson._id, status: lesson.status, isPublished: lesson.isPublished } })
 }
 
@@ -237,6 +238,8 @@ export async function uploadLessonMaterials(req, res) {
     await Promise.all(storedNames.map(deleteLessonFile))
     throw error
   }
+  const addedIds = lesson.materials.filter((item) => storedNames.includes(item.storedName)).map((item) => item._id)
+  if (lesson.isPublished) queueEmailTask('materials', () => emailLessonMaterialsAdded(lesson._id, addedIds))
   return res.status(201).json({ success: true, materials: lesson.materials })
 }
 

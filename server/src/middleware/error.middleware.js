@@ -57,6 +57,6 @@ export function errorHandler(err, req, res, next) {
   const status = Number(err.status) || 500
   return res.status(status).json({
     success: false,
-    message: status >= 500 ? 'An unexpected server error occurred' : err.message,
+    message: status >= 500 && !err.expose ? 'An unexpected server error occurred' : err.message,
   })
 }

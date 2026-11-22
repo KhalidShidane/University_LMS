@@ -1,4 +1,5 @@
 import './config/loadEnv.js'
+import { sessionSubject } from './middleware/auth.middleware.js'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -39,6 +40,9 @@ app.use(protectCookieRequests)
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 1200,
+  // Signed-in users get their own budget (students on one campus network often share an IP);
+  // anonymous traffic is limited per client address.
+  keyGenerator: (req) => { const userId = sessionSubject(req); return userId ? `user:${userId}` : `ip:${req.ip}` },
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   // Notes have their own per-student limiter (see notes.routes.js).

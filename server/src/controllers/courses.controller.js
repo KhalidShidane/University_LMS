@@ -11,6 +11,8 @@ import Lesson from '../models/Lesson.js'
 import { allowedCoverTypes, deleteLessonFile, deleteLessonFiles, fileExtension, hasSafeSignature, lessonFilePath, storeLessonFile } from '../services/lessonStorage.service.js'
 import { loadSystemSettings } from '../services/systemSettings.service.js'
 import { academicYearStart, resolveCurrentAcademicYear } from '../utils/academicYear.js'
+import { createWithGeneratedCode } from '../services/codeGenerator.service.js'
+import { emailCoursePublished, queueEmailTask } from '../services/emailNotifications.service.js'
 
 const badRequest = (message) => Object.assign(new Error(message), { status: 400 })
 const coursePopulate = [
@@ -39,10 +41,9 @@ export async function listAdminCourses(req, res) {
 export async function createAdminCourse(req, res) {
   const { name, courseCode } = req.body || {}
   const systemSettings = await loadSystemSettings()
-  if (typeof name !== 'string' || !name.trim() || typeof courseCode !== 'string' || !courseCode.trim()) throw badRequest('Course name and course code are required')
-  const normalizedCourseCode = courseCode.trim().toUpperCase()
-  const existingCourse = await Course.exists({ courseCode: normalizedCourseCode, class: null, isActive: true })
-  if (existingCourse) throw Object.assign(new Error('An unassigned course already uses this course code'), { status: 409 })
+  if (typeof name !== 'string' || !name.trim()) throw badRequest('Course name is required')
+  const providedCourseCode = typeof courseCode === 'string' ? courseCode.trim().toUpperCase() : ''
+  if (providedCourseCode && await Course.exists({ courseCode: providedCourseCode, class: null, isActive: true })) throw Object.assign(new Error('An unassigned course already uses this course code; choose another or leave it empty to generate one'), { status: 409 })
   const academicYear = systemSettings.academic?.academicYear || `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`
   const configuredSemesters = systemSettings.academic?.semesters?.length ? systemSettings.academic.semesters : defaultCourseSemesters
   const semester = configuredSemesters.includes(systemSettings.academic?.semester) ? systemSettings.academic.semester : configuredSemesters[0]
@@ -57,7 +58,10 @@ export async function createAdminCourse(req, res) {
   }
   let course
   try {
-    course = await Course.create({ name: name.trim(), courseCode: normalizedCourseCode, academicYear, semester, coverImage })
+    const createCourse = (code) => Course.create({ name: name.trim(), courseCode: code, academicYear, semester, coverImage })
+    course = providedCourseCode
+      ? await createCourse(providedCourseCode)
+      : await createWithGeneratedCode(Course, 'courseCode', name, createCourse, { maxLength: 30, numbered: true })
   } catch (error) {
     if (coverImage) await deleteLessonFile(coverImage.storedName)
     if (error.code === 11000) throw Object.assign(new Error('This course code is already used in the selected class and department'), { status: 409 })
@@ -81,6 +85,38 @@ export async function deleteAdminCourse(req, res) {
   await course.deleteOne()
   if (coverStoredName && !await Course.exists({ 'coverImage.storedName': coverStoredName })) await deleteLessonFile(coverStoredName)
   return res.json({ success: true, message: 'Course and its lessons and uploaded materials were permanently deleted' })
+}
+
+export async function updateAdminCourse(req, res) {
+  if (!mongoose.isValidObjectId(req.params.id)) throw badRequest('A valid course ID is required')
+  const course = await Course.findById(req.params.id)
+  if (!course) return res.status(404).json({ success: false, message: 'Course not found' })
+  const { name, courseCode, description } = req.body || {}
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) throw badRequest('Course name is required')
+    if (name.trim().length > 120) throw badRequest('Course name must be 120 characters or fewer')
+    course.name = name.trim()
+  }
+  if (description !== undefined) {
+    if (typeof description !== 'string' || description.length > 1000) throw badRequest('Description must be 1000 characters or fewer')
+    course.description = description.trim()
+  }
+  // Empty code keeps the current one.
+  const nextCode = typeof courseCode === 'string' ? courseCode.trim().toUpperCase() : ''
+  if (nextCode && nextCode !== course.courseCode) {
+    if (nextCode.length > 30) throw badRequest('Course code must be 30 characters or fewer')
+    const classes = [course.class, ...(course.teachingAssignments || []).map((item) => item.class)].filter(Boolean)
+    const scope = classes.length ? { $or: [{ class: { $in: classes } }, { 'teachingAssignments.class': { $in: classes } }] } : { class: null }
+    if (await Course.exists({ _id: { $ne: course._id }, courseCode: nextCode, isActive: true, ...scope })) throw Object.assign(new Error(`The code ${nextCode} is already used by another course; choose another`), { status: 409 })
+    course.courseCode = nextCode
+  }
+  try {
+    await course.save()
+  } catch (error) {
+    if (error?.code === 11000) throw Object.assign(new Error('Another active course already uses this code'), { status: 409 })
+    throw error
+  }
+  return res.json({ success: true, course: await populated(course) })
 }
 
 export async function updateAdminCourseStatus(req, res) {
@@ -140,7 +176,11 @@ export async function assignCourseTeacher(req, res) {
     }
     const existingAssignment = course.teachingAssignments.find((item) => String(item.class) === String(academicClass._id))
     if (existingAssignment) existingAssignment.teacher = teacher._id
-    else course.teachingAssignments.push({ teacher: teacher._id, class: academicClass._id, department: academicClass.department })
+    else {
+      course.teachingAssignments.push({ teacher: teacher._id, class: academicClass._id, department: academicClass.department })
+      // First time this course reaches the class: tell its students (after the save below).
+      res.once('finish', () => { if (res.statusCode < 400) queueEmailTask('course', () => emailCoursePublished(course._id, academicClass._id)) })
+    }
     if (!course.class) {
       course.class = academicClass._id
       course.department = academicClass.department

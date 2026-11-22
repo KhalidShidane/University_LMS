@@ -110,7 +110,33 @@ function SystemHealth() {
   const refresh = useCallback(async () => { setBusy(true); setError(''); try { const { data } = await api.get('/admin/system-health'); setHealth(data.health) } catch (e) { setError(apiErrorMessage(e)) } finally { setBusy(false) } }, [])
   useEffect(() => { refresh() }, [refresh])
   const bytes = (value) => value == null ? 'Unavailable' : `${(value / (1024 ** 3)).toFixed(1)} GB`
-  return <><PageHeader title="System health" description="Current API, database, and upload storage status." icon={Activity} action={<button className="button-secondary" onClick={refresh} disabled={busy}><RefreshCw size={15} /> Refresh</button>} />{error && <div className="system-error">{error}</div>}{health && <><div className="health-card-grid">{[['API', health.api], ['Database', health.database], ['Upload storage', health.storage.status]].map(([label, status]) => <article className="content-card health-card" key={label}><span>{label}</span><b className={status === 'ok' || status === 'connected' || status === 'available' ? 'health-ok' : 'health-down'}><i />{status}</b></article>)}</div><section className="content-card system-section"><div className="panel-heading"><div><h2>Runtime</h2><p>Safe operational details; credentials and environment secrets are not displayed.</p></div></div><dl className="health-details"><dt>Environment</dt><dd>{health.environment}</dd><dt>Application version</dt><dd>{health.version}</dd><dt>Storage capacity</dt><dd>{bytes(health.storage.totalBytes)}</dd><dt>Storage free</dt><dd>{bytes(health.storage.freeBytes)}</dd><dt>Last checked</dt><dd>{dateLabel(health.checkedAt)}</dd></dl></section></>}</>
+  return <><PageHeader title="System health" description="Current API, database, and upload storage status." icon={Activity} action={<button className="button-secondary" onClick={refresh} disabled={busy}><RefreshCw size={15} /> Refresh</button>} />{error && <div className="system-error">{error}</div>}<EmailProviderPanel />{health && <><div className="health-card-grid">{[['API', health.api], ['Database', health.database], ['Upload storage', health.storage.status]].map(([label, status]) => <article className="content-card health-card" key={label}><span>{label}</span><b className={status === 'ok' || status === 'connected' || status === 'available' ? 'health-ok' : 'health-down'}><i />{status}</b></article>)}</div><section className="content-card system-section"><div className="panel-heading"><div><h2>Runtime</h2><p>Safe operational details; credentials and environment secrets are not displayed.</p></div></div><dl className="health-details"><dt>Environment</dt><dd>{health.environment}</dd><dt>Application version</dt><dd>{health.version}</dd><dt>Storage capacity</dt><dd>{bytes(health.storage.totalBytes)}</dd><dt>Storage free</dt><dd>{bytes(health.storage.freeBytes)}</dd><dt>Last checked</dt><dd>{dateLabel(health.checkedAt)}</dd></dl></section></>}</>
+}
+
+function EmailProviderPanel() {
+  const [data, setData] = useState(null); const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [result, setResult] = useState(null)
+  const load = useCallback(async () => { setError(''); try { const { data: body } = await api.get('/admin/email/status'); setData(body) } catch (e) { setError(apiErrorMessage(e)) } }, [])
+  useEffect(() => { load() }, [load])
+  async function testAndResume() {
+    if (!window.confirm('Send one test email to the test recipient and, if it is accepted, resume paused email delivery?')) return
+    setBusy(true); setResult(null)
+    try { const { data: body } = await api.post('/admin/email/test-and-resume'); setResult(body); body.success ? toast.success(body.message) : toast.error(body.message); await load() }
+    catch (e) { toast.error(apiErrorMessage(e)) }
+    finally { setBusy(false) }
+  }
+  const provider = data?.provider
+  const blocked = provider?.status === 'temporarily_blocked'
+  const when = (value) => value ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—'
+  return <section className="content-card system-section email-provider-panel"><div className="panel-heading"><div><h2>Email delivery</h2><p>Provider status and the notification email queue. Credentials are never displayed.</p></div><button className="button-secondary" onClick={load} disabled={busy}><RefreshCw size={15} /> Refresh</button></div>
+    {error && <div className="system-error">{error}</div>}
+    {data && <>
+      <div className="health-card-grid"><article className="content-card health-card"><span>Provider ({provider.name})</span><b className={blocked ? 'health-down' : 'health-ok'}><i />{blocked ? 'temporarily blocked' : 'ok'}</b></article><article className="content-card health-card"><span>Waiting emails</span><b>{data.queue.pending}</b></article><article className="content-card health-card"><span>Sent today / this month</span><b>{data.quota.sentToday} / {data.quota.sentThisMonth}</b></article><article className="content-card health-card"><span>Failed</span><b>{data.queue.failed}</b></article></div>
+      {blocked && <div className="system-error email-provider-blocked"><b>Sending is paused.</b> The provider refused to send for this account on {when(provider.since)} (HTTP {provider.httpStatus || '—'}, {provider.providerErrorCode || provider.lastErrorCode}). Waiting emails are kept and will be sent once delivery is resumed. Share this reference with the provider's support: <code>{provider.providerErrorIdentifier || '—'}</code></div>}
+      <dl className="email-provider-details"><div><dt>Sender (EMAIL_FROM)</dt><dd>{provider.senderEmail || '—'}</dd></div><div><dt>Test recipient</dt><dd>{provider.testRecipient || 'Your admin email'}</dd></div><div><dt>Last checked</dt><dd>{when(provider.lastCheckedAt)}</dd></div><div><dt>Last resumed</dt><dd>{when(provider.resumedAt)}</dd></div><div><dt>Remaining notification quota</dt><dd>{data.quota.available}</dd></div></dl>
+      <div className="email-provider-actions"><button className="button-primary" onClick={testAndResume} disabled={busy}>{busy ? 'Testing…' : blocked ? 'Test connection & resume sending' : 'Send test email'}</button><small>Sends one real email to the test recipient (counts toward the daily quota). Delivery resumes only if the provider accepts it.</small></div>
+      {result && !result.success && result.test && <p className="system-error">Test result: {result.test.errorCode}{result.test.httpStatus ? ` (HTTP ${result.test.httpStatus})` : ''}{result.test.providerErrorCode ? ` · ${result.test.providerErrorCode}` : ''}{result.test.providerErrorIdentifier ? ` · ref ${result.test.providerErrorIdentifier}` : ''}</p>}
+    </>}
+  </section>
 }
 
 export default function AdminSystemPage({ section }) {

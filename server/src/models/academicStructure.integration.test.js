@@ -46,7 +46,7 @@ test('MongoDB academic hierarchy, unique indexes, population, and safe deactivat
         department: department._id,
         assignedClasses: [otherDepartmentClass._id],
       }),
-      /Teacher classes must belong to the assigned department/,
+      /Teacher classes must belong to an assigned department/,
     )
     await assert.rejects(
       User.create({

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { downloadAllNotesZip, downloadNote } from '../controllers/downloads.controller.js'
 import { rateLimit } from 'express-rate-limit'
 import asyncHandler from '../middleware/asyncHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js'
@@ -24,6 +25,8 @@ router.get('/', asyncHandler(listNotes))
 router.get('/facets', asyncHandler(noteFacets))
 router.put('/order', asyncHandler(reorderNotes))
 router.post('/', auditMutations, asyncHandler(createNote))
+router.get('/export/all', asyncHandler(downloadAllNotesZip))
+router.get('/:id/download', asyncHandler(downloadNote))
 router.get('/:id', asyncHandler(getNote))
 // Autosave edits are intentionally not audit-logged: notes are private and saved very often.
 router.patch('/:id', asyncHandler(updateNote))

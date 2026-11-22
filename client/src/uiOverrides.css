@@ -85,3 +85,71 @@
 .teacher-class-course-card:hover { box-shadow: 0 14px 30px -16px var(--card-to); }
 .lesson-card-top { display: flex; justify-content: flex-start; margin-bottom: 8px; }
 .teacher-class-course-card h3 { font-weight: 700; }
+
+/* ================================================================
+   Custom dropdowns: one clean, centered, responsive style for every <select>
+   (native picker kept for keyboard, screen readers, and mobile OS pickers)
+   ================================================================ */
+:where(select) {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  color: var(--ink);
+  background-color: var(--surface);
+  font-size: 12px;
+  font-weight: 550;
+}
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  /* Room for the arrow on the right, mirrored on the left so the text stays visually centered. */
+  padding-left: 34px !important;
+  padding-right: 34px !important;
+  text-align: center;
+  text-align-last: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 15px 15px !important;
+  transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+select:hover:not(:disabled) { border-color: var(--blue, #2563eb); }
+select:focus, select:focus-visible { outline: none !important; border-color: var(--blue, #2563eb) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue, #2563eb) 22%, transparent) !important; }
+select:disabled { cursor: not-allowed; opacity: .6; }
+select option { text-align: left; color: var(--ink); background: var(--surface); font-weight: 500; }
+select option:disabled { color: var(--muted); }
+:root[data-theme='dark'] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b8c2d0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+/* Compact selects inside the notes editor toolbar. */
+.note-block-select { padding-left: 10px !important; padding-right: 26px !important; background-position: right 7px center !important; background-size: 13px 13px !important; text-align: left; text-align-last: left; }
+
+/* ================================================================
+   Mobile: no horizontal overflow
+   ================================================================ */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, video, canvas, svg { max-width: 100%; }
+.page-content, .panel, .content-card, section, article, form, label { min-width: 0; }
+.table-scroll, .data-table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.section-title-row { flex-wrap: wrap; gap: 14px; }
+.section-title-row > div:first-child { min-width: 0; }
+.section-title-row h1 { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .page-content { padding-left: 14px !important; padding-right: 14px !important; }
+  .section-title-row { align-items: stretch; }
+  .section-title-row > :is(button, a, .section-title-actions) { width: 100%; justify-content: center; }
+  select, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), textarea { max-width: 100%; }
+  .assignment-filters > *, .analytics-filters > *, .lesson-toolbar > * { flex: 1 1 100%; min-width: 0 !important; width: 100%; }
+  .modal-backdrop { padding: 12px !important; }
+  .modal-backdrop > section, .modal-backdrop > .panel { width: min(100%, calc(100vw - 24px)) !important; max-height: calc(100vh - 24px); overflow-y: auto; }
+  .app-footer { flex-wrap: wrap; gap: 6px; padding-left: 14px; padding-right: 14px; }
+}

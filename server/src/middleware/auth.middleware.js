@@ -35,6 +35,17 @@ export function createSessionCookie(res, user) {
   res.cookie('lms_session', token, sessionCookieOptions())
 }
 
+/** User id from a valid session cookie (signature checked, no database call), or null. */
+export function sessionSubject(req) {
+  const token = req.cookies?.lms_session
+  if (!token) return null
+  try {
+    return String(jwt.verify(token, jwtSecret(), { issuer: 'university-lms' }).sub || '') || null
+  } catch {
+    return null
+  }
+}
+
 export function clearSessionCookie(res) {
   const { httpOnly, secure, sameSite, path } = sessionCookieOptions()
   res.clearCookie('lms_session', { httpOnly, secure, sameSite, path })
@@ -50,6 +61,10 @@ export async function requireAuth(req, res, next) {
     if (!user || !user.isActive) {
       clearSessionCookie(res)
       return res.status(401).json({ success: false, message: 'Your session is no longer active' })
+    }
+    if (user.role === 'student' && user.emailVerified === false) {
+      clearSessionCookie(res)
+      return res.status(403).json({ success: false, code: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email address before signing in.' })
     }
     if ((Number(payload.ver) || 0) !== (Number(user.sessionVersion) || 0)) {
       clearSessionCookie(res)

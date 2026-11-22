@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import GradebookExport from '../../components/common/GradebookExport.jsx'
 import { ArrowDown, ArrowUp, BookOpenCheck, Check, ClipboardList, Clock3, Eye, EyeOff, Pencil, Plus, Send, Timer, Trash2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api, { apiErrorMessage } from '../../services/api.js'
@@ -80,7 +81,7 @@ export default function TeacherQuizzesPage() {
   if (error) return <ErrorState message={error} onRetry={load} />
 
   return <div className="teacher-quizzes-page">
-    <div className="section-title-row"><div><div className="section-kicker">ASSESSMENT MANAGEMENT</div><h1>Quizzes & exams</h1><p>Create timed assessments, review attempts, and release results to your classes.</p></div><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Build a quiz</button></div>
+    <div className="section-title-row"><div><div className="section-kicker">ASSESSMENT MANAGEMENT</div><h1>Quizzes & exams</h1><p>Create timed assessments, review attempts, and release results to your classes.</p></div><div className="section-title-actions"><GradebookExport type="quizzes" /><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Build a quiz</button></div></div>
     {form && <section className="panel quiz-builder-panel"><div className="panel-heading"><div><span className="section-kicker">QUESTION BUILDER</span><h2>{editing ? 'Edit quiz' : 'Create a quiz'}</h2><p>Choose a class, set a time limit, then add questions and marks.</p></div><button className="icon-button" onClick={() => { setForm(null); setEditing(null) }} aria-label="Close builder"><X size={18} /></button></div>
       <form className="quiz-builder-form" onSubmit={saveQuiz}>
         <div className="quiz-builder-grid"><label>Quiz title<input required maxLength="160" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label><label>Class<select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })}><option value="">Choose class</option>{classes.map((item) => <option value={item._id} key={item._id}>{item.classCode} · {item.name}</option>)}</select></label><label>Duration (minutes)<input required type="number" min="1" max="600" value={form.durationMinutes} onChange={(e) => setForm({ ...form, durationMinutes: e.target.value })} /></label><label>Save status<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}><option value="draft">Draft</option><option value="published">Publish now</option><option value="closed">Closed</option></select></label></div>

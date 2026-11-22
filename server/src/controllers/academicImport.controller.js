@@ -4,6 +4,7 @@ import { courseSemesters as defaultCourseSemesters } from '../config/academicSem
 import Department from '../models/Department.js'
 import { createExcelTemplate, parseExcelRows } from '../services/excelWorkbook.service.js'
 import { loadSystemSettings } from '../services/systemSettings.service.js'
+import { createWithGeneratedCode } from '../services/codeGenerator.service.js'
 
 const templates = {
   classes: { headers: ['name', 'classCode', 'departmentCode', 'level', 'description'], sheet: 'Classes', filename: 'classes-template.xlsx' },
@@ -44,15 +45,19 @@ export async function importAcademicRows(req, res) {
       const department = departmentByCode.get(row.departmentcode.toUpperCase())
       if (!department) throw new Error(`Department code "${row.departmentcode}" was not found`)
       if (type === 'classes') {
-        if (!row.name || !row.classcode) throw new Error('Name and classCode are required')
-        await Class.create({ name: row.name, classCode: row.classcode, department: department._id, level: row.level || null, description: row.description || '' })
+        if (!row.name) throw new Error('Name is required')
+        const createClass = (classCode) => Class.create({ name: row.name, classCode, department: department._id, level: row.level || null, description: row.description || '' })
+        if (row.classcode) await createClass(row.classcode)
+        else await createWithGeneratedCode(Class, 'classCode', row.name, createClass, { maxLength: 30 })
       } else {
         const semester = row.semester
-        if (!row.name || !row.coursecode || !row.classcode) throw new Error('Name, courseCode, and classCode are required')
+        if (!row.name || !row.classcode) throw new Error('Name and classCode are required')
         if (!allowedSemesters.includes(semester)) throw new Error(`Semester must be one of: ${allowedSemesters.join(', ')}`)
         const academicClass = await Class.findOne({ classCode: row.classcode.toUpperCase(), department: department._id, isActive: true }).select('_id').lean()
         if (!academicClass) throw new Error(`Active class code "${row.classcode}" was not found in ${department.code}`)
-        await Course.create({ name: row.name, courseCode: row.coursecode, academicYear: currentYear, semester, department: department._id, class: academicClass._id, description: row.description || '' })
+        const createCourse = (courseCode) => Course.create({ name: row.name, courseCode, academicYear: currentYear, semester, department: department._id, class: academicClass._id, description: row.description || '' })
+        if (row.coursecode) await createCourse(row.coursecode)
+        else await createWithGeneratedCode(Course, 'courseCode', row.name, createCourse, { maxLength: 30, numbered: true })
       }
       summary.created += 1
     } catch (error) {

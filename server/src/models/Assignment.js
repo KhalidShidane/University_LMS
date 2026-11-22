@@ -16,11 +16,14 @@ const assignmentSchema = new mongoose.Schema({
   attachments: [{ originalName: { type: String, trim: true, maxlength: 255 }, storedName: { type: String, trim: true, maxlength: 90 }, mimeType: { type: String, trim: true, maxlength: 120 }, size: { type: Number, min: 1, max: 100 * 1024 * 1024 }, uploadedAt: { type: Date, default: Date.now } }],
   status: { type: String, enum: ['draft', 'published', 'closed'], default: undefined, index: true },
   isPublished: { type: Boolean, default: true, index: true },
+  // First time the assignment was published; drives which deadline reminders still apply.
+  publishedAt: { type: Date, default: null },
 }, { timestamps: true, versionKey: false })
 
 assignmentSchema.pre('validate', async function validateReferences() {
   if (!this.status) this.status = this.isPublished ? 'published' : 'draft'
   this.isPublished = this.status === 'published'
+  if (this.status === 'published' && !this.publishedAt) this.publishedAt = new Date()
   if (this.totalMarks == null) this.totalMarks = this.maxScore
   else this.maxScore = this.totalMarks
   if (this.class) await getExistingReferences(Class, [this.class], 'class')

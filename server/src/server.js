@@ -6,6 +6,7 @@ import { connectDatabase, disconnectDatabase } from './config/db.js'
 import { startAssignmentDeadlineNotifications } from './services/assignmentDeadlineNotifications.service.js'
 import { closeAllNotificationStreams } from './services/notificationRealtime.service.js'
 import { validateProductionConfig } from './config/securityConfig.js'
+import { startEmailNotifications } from './services/emailNotifications.service.js'
 
 export async function startServer() {
   validateProductionConfig()
@@ -13,7 +14,9 @@ export async function startServer() {
   try {
     await connectDatabase()
     console.info('MongoDB connected')
-    stopDeadlineNotifications = startAssignmentDeadlineNotifications()
+    const stopAssignmentReminders = startAssignmentDeadlineNotifications()
+    const stopEmailNotifications = startEmailNotifications()
+    stopDeadlineNotifications = () => { stopAssignmentReminders(); stopEmailNotifications() }
   } catch {
     if (process.env.NODE_ENV === 'production') {
       await disconnectDatabase().catch(() => {})

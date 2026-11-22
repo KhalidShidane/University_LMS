@@ -6,10 +6,12 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import api, { apiErrorMessage } from '../../services/api.js'
 import { PageLoading } from '../../components/ui/States.jsx'
 import './AuthPage.css'
+import TwoFactorLoginStep from './TwoFactorLoginStep.jsx'
 
 export default function AuthPage({ mode }) {
   const isRegister = mode === 'register'
-  const { login, registerStudent } = useAuth()
+  const { login, registerStudent, completeTwoFactor } = useAuth()
+  const [challenge, setChallenge] = useState('')
   const navigate = useNavigate()
   const location = useLocation()
   const [busy, setBusy] = useState(false)
@@ -35,19 +37,30 @@ export default function AuthPage({ mode }) {
     setBusy(true)
     try {
       if (isRegister) {
-        await registerStudent(form)
-        toast.success('Your student workspace is ready')
-        navigate('/app/dashboard', { replace: true })
+        const result = await registerStudent(form)
+        toast.success(result.emailSent ? 'Account created. Check your email to verify it.' : 'Account created')
+        navigate('/verify-email', { replace: true, state: { email: form.email.trim(), emailSent: result.emailSent } })
       } else {
-        const user = await login({ email: form.email, password: form.password })
-        toast.success(`Welcome back, ${user.fullName.split(' ')[0]}`)
+        const result = await login({ email: form.email, password: form.password })
+        if (result.twoFactorRequired) { setChallenge(result.challengeToken); return }
+        toast.success(`Welcome back, ${result.user.fullName.split(' ')[0]}`)
         navigate(location.state?.from?.pathname || '/app/dashboard', { replace: true })
       }
     } catch (error) {
+      const code = error.response?.data?.code
+      if (code === 'EMAIL_NOT_VERIFIED' || code === 'EMAIL_PENDING_VERIFICATION') {
+        toast.error(apiErrorMessage(error))
+        navigate('/verify-email', { state: { email: form.email.trim(), reason: 'login' } })
+        return
+      }
       toast.error(apiErrorMessage(error))
     } finally {
       setBusy(false)
     }
+  }
+
+  if (challenge) {
+    return <TwoFactorLoginStep challengeToken={challenge} completeTwoFactor={completeTwoFactor} onCancel={() => setChallenge('')} onSignedIn={(user) => { toast.success(`Welcome back, ${user.fullName.split(' ')[0]}`); navigate(location.state?.from?.pathname || '/app/dashboard', { replace: true }) }} />
   }
 
   const classes = options?.classes || []
@@ -66,7 +79,7 @@ export default function AuthPage({ mode }) {
         <div className="auth-heading auth-heading-centered">
           <span className="auth-kicker">{isRegister ? 'STUDENT ACCESS' : 'HORMUUD UNIVERSITY · LEARNING MANAGEMENT SYSTEM'}</span>
           <h1 id="auth-title">Start your learning journey</h1>
-          <p>{isRegister ? 'Create your student account and get instant access to your class.' : 'Sign in with your university account to continue learning.'}</p>
+          <p>{isRegister ? 'Create your student account, verify your email, and access your class.' : 'Sign in with your university account to continue learning.'}</p>
         </div></>}
 
         <div className="auth-card">
@@ -77,10 +90,10 @@ export default function AuthPage({ mode }) {
             {isRegister && <label className="auth-field register-id-field">Student ID<span className="auth-input-wrap"><Hash size={17} /><input required maxLength={40} value={form.studentId} onChange={(event) => update('studentId', event.target.value)} placeholder="e.g. STU-20418" /></span></label>}
             {isRegister && <div className="auth-field-row"><label className="auth-field">Faculty<span className="auth-select-wrap"><Building2 size={16} /><select required value={form.faculty} onChange={(event) => update('faculty', event.target.value)}><option value="">Choose faculty</option>{(options?.faculties || []).map((item) => <option key={item._id} value={item._id}>{item.name} · {item.code}</option>)}</select></span></label><label className="auth-field">Department<span className="auth-select-wrap"><Building2 size={16} /><select required value={form.department} onChange={(event) => update('department', event.target.value)} disabled={!form.faculty}><option value="">Choose department</option>{departments.map((item) => <option key={item._id} value={item._id}>{item.name} · {item.code}</option>)}</select></span></label></div>}
             {isRegister && <label className="auth-field register-class-field">Academic class<span className="auth-select-wrap"><School size={17} /><select required value={form.class} onChange={(event) => update('class', event.target.value)} disabled={!form.department}><option value="">Choose your class</option>{availableClasses.map((item) => <option key={item._id} value={item._id}>{item.classCode} · {item.name}</option>)}</select></span></label>}
-            <label className={`auth-field ${isRegister ? 'register-password-field' : ''}`}><span className="auth-password-label">Password{!isRegister && <span className="auth-password-hint"><LockKeyhole size={13} /> Protected sign-in</span>}</span><span className="auth-input-wrap"><LockKeyhole size={17} /><input type={showPassword ? 'text' : 'password'} autoComplete={isRegister ? 'new-password' : 'current-password'} required minLength={8} maxLength={72} value={form.password} onChange={(event) => update('password', event.target.value)} placeholder={isRegister ? '8–72 characters' : 'Enter your password'} /><button type="button" className="password-reveal" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>
+            <label className={`auth-field ${isRegister ? 'register-password-field' : ''}`}><span className="auth-password-label">Password{!isRegister && <Link className="auth-forgot-link" to="/forgot-password">Forgot password?</Link>}</span><span className="auth-input-wrap"><LockKeyhole size={17} /><input type={showPassword ? 'text' : 'password'} autoComplete={isRegister ? 'new-password' : 'current-password'} required minLength={8} maxLength={72} value={form.password} onChange={(event) => update('password', event.target.value)} placeholder={isRegister ? '8–72 characters' : 'Enter your password'} /><button type="button" className="password-reveal" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>
             {isRegister && classes.length === 0 && <p className="auth-form-hint">No active classes are open for registration yet. Contact your university administrator.</p>}
             <button className="button-primary auth-submit" type="submit" disabled={busy || (isRegister && (classes.length === 0 || !form.class))}>{busy ? 'Please wait…' : isRegister ? 'Create student account' : 'Sign in to your account'} {!busy && <ArrowRight size={17} />}</button>
-            {isRegister && <p className="consent-note">Your student account is ready as soon as registration is complete.</p>}
+            {isRegister && <p className="consent-note">We will email you a link to verify your address before you can sign in.</p>}
           </form>}
         </div>
         <div className="auth-trust-note"><LockKeyhole size={14} /><span>Your account and academic information are protected.</span></div>

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import TwoFactorPanel from '../components/common/TwoFactorPanel.jsx'
 import { Camera, ImagePlus, Pencil, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext.jsx'
 import api, { apiErrorMessage } from '../services/api.js'
 import ProfileAvatar from '../components/common/ProfileAvatar.jsx'
 import { compressImage } from '../utils/compressImage.js'
+import EmailPreferencesPanel from '../components/common/EmailPreferencesPanel.jsx'
 
 const roles = { admin: 'Administrator', teacher: 'Teacher', student: 'Student' }
 
@@ -125,5 +127,7 @@ export default function ProfilePage() {
       </section>
       <section className="panel profile-details-panel"><div className="panel-heading"><div><h2>Account details</h2><p>Your identity and academic access</p></div></div><dl className="profile-details"><div><dt>Full name</dt><dd>{user.fullName}</dd></div><div><dt>Email address</dt><dd>{user.email}</dd></div><div><dt>Account role</dt><dd><span className={`role-pill role-${user.role}`}>{roles[user.role]}</span></dd></div>{user.studentId && <div><dt>Student ID</dt><dd>{user.studentId}</dd></div>}{user.class && <div><dt>Class</dt><dd>{typeof user.class === 'string' ? 'Assigned academic class' : user.class.name}</dd></div>}{user.department && <div><dt>Department</dt><dd>{typeof user.department === 'string' ? 'Assigned department' : user.department.name}</dd></div>}</dl></section>
     </div>
+    <TwoFactorPanel />
+    {user.role === 'student' && <EmailPreferencesPanel />}
   </>
 }

@@ -6,6 +6,10 @@ const announcementSchema = new mongoose.Schema({
   message: { type: String, trim: true, required: true, maxlength: 5000 },
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isActive: { type: Boolean, default: true, index: true },
+  // Email delivery chosen explicitly by the administrator; 'none' sends no email.
+  emailAudience: { type: String, enum: ['none', 'all_students', 'faculty', 'department', 'class'], default: 'none' },
+  emailTarget: { type: mongoose.Schema.Types.ObjectId, default: null },
+  emailQueuedCount: { type: Number, default: 0, min: 0 },
 }, { timestamps: true, versionKey: false })
 
 announcementSchema.index({ isActive: 1, createdAt: -1 })

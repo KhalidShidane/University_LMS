@@ -62,10 +62,16 @@ test('students require a Student ID and Class', async () => {
   assert.equal(student.email, 'student@example.edu')
 })
 
-test('teachers require a department and user roles are constrained', async () => {
+test('teachers need a department once classes are assigned, and user roles are constrained', async () => {
+  // A teacher account can be created first and placed in a department later...
   const teacher = new User({ fullName: 'Teacher Example', email: 'teacher@example.edu', passwordHash: BCRYPT_HASH, role: 'teacher' })
   const teacherError = await teacher.validate().then(() => null, (validationError) => validationError)
-  assert.ok(teacherError.errors.department)
+  assert.equal(teacherError, null)
+  // ...but teaching classes requires a department.
+  const departmentRequired = userSchema.path('department').options.required
+  assert.equal(departmentRequired.call({ role: 'teacher', assignedClasses: [new mongoose.Types.ObjectId()] }), true)
+  assert.equal(departmentRequired.call({ role: 'teacher', assignedClasses: [] }), false)
+  assert.equal(departmentRequired.call({ role: 'admin', assignedClasses: [] }), false)
 
   const invalidRole = new User({ fullName: 'Example', email: 'example@university.edu', passwordHash: BCRYPT_HASH, role: 'owner' })
   const roleError = await invalidRole.validate().then(() => null, (validationError) => validationError)

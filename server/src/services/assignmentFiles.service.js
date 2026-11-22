@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { assertFileIsSafe } from './fileScan.service.js'
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -50,6 +51,7 @@ export function hasValidSignature(file, extension) {
 export async function storeSubmission(file, extension = extensionOf(file.originalname)) {
   const storedName = `${randomUUID()}${extension}`
   await mkdir(uploadRoot, { recursive: true })
+  await assertFileIsSafe(file.buffer, file.originalname)
   await writeFile(join(uploadRoot, storedName), file.buffer, { flag: 'wx' })
   return storedName
 }
@@ -57,6 +59,7 @@ export async function storeSubmission(file, extension = extensionOf(file.origina
 export async function storeAssignmentAttachment(file, extension) {
   const storedName = `${randomUUID()}${extension}`
   await mkdir(attachmentRoot, { recursive: true })
+  await assertFileIsSafe(file.buffer, file.originalname)
   await writeFile(join(attachmentRoot, storedName), file.buffer, { flag: 'wx' })
   return storedName
 }

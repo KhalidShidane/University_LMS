@@ -5,6 +5,9 @@ import AppShell from './components/layout/AppShell.jsx'
 import { LoadingScreen } from './components/ui/States.jsx'
 
 const AuthPage = lazy(() => import('./pages/auth/AuthPage.jsx'))
+const VerifyEmailPage = lazy(() => import('./pages/auth/VerifyEmailPage.jsx'))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/PasswordResetPages.jsx').then((module) => ({ default: module.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('./pages/auth/PasswordResetPages.jsx').then((module) => ({ default: module.ResetPasswordPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'))
 const AdminManagementPage = lazy(() => import('./pages/admin/AdminManagementPage.jsx'))
 const AdminCoursesPage = lazy(() => import('./pages/admin/AdminCoursesPage.jsx'))
@@ -59,6 +62,11 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomeRedirect />} />
+      <Route path="/verify-email" element={<Suspense fallback={fallback}><VerifyEmailPage /></Suspense>} />
+      <Route path="/verify-email/:token" element={<Suspense fallback={fallback}><VerifyEmailPage /></Suspense>} />
+      <Route path="/forgot-password" element={<Suspense fallback={fallback}><ForgotPasswordPage /></Suspense>} />
+      <Route path="/reset-password" element={<Suspense fallback={fallback}><ResetPasswordPage /></Suspense>} />
+      <Route path="/reset-password/:token" element={<Suspense fallback={fallback}><ResetPasswordPage /></Suspense>} />
       <Route element={<GuestOnly />}>
         <Route path="/login" element={<Suspense fallback={fallback}><AuthPage mode="login" /></Suspense>} />
         <Route path="/register" element={<Suspense fallback={fallback}><AuthPage mode="register" /></Suspense>} />
@@ -86,7 +94,7 @@ function AppRoutes() {
           <Route path="messages/:conversationId" element={<Suspense fallback={fallback}><RoleRoute roles={['admin', 'teacher', 'student']}><MessagesPage /></RoleRoute></Suspense>} />
           <Route path="notifications" element={<Suspense fallback={fallback}><NotificationCenterPage /></Suspense>} />
           <Route path="analytics" element={<Suspense fallback={fallback}><RoleRoute roles={['admin', 'teacher', 'student']}><AnalyticsPage /></RoleRoute></Suspense>} />
-          {['settings', 'audit-logs'].map((section) => <Route key={section} path={section} element={<Suspense fallback={fallback}><RoleRoute roles={['admin']}><AdminSystemPage section={section} /></RoleRoute></Suspense>} />)}
+          {['settings', 'audit-logs', 'system-health'].map((section) => <Route key={section} path={section} element={<Suspense fallback={fallback}><RoleRoute roles={['admin']}><AdminSystemPage section={section} /></RoleRoute></Suspense>} />)}
           <Route path="notes" element={<Suspense fallback={fallback}><RoleRoute roles={['student']}><StudentNotesPage /></RoleRoute></Suspense>} />
           <Route path="learning" element={<Suspense fallback={fallback}><RoleRoute roles={['student']}><StudentLessonsPage /></RoleRoute></Suspense>} />
           <Route path="learning/courses/:courseId" element={<Suspense fallback={fallback}><RoleRoute roles={['student']}><StudentCourseLessonsPage /></RoleRoute></Suspense>} />

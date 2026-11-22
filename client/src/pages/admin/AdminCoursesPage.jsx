@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BookOpenCheck, Plus, Trash2, Upload, X } from 'lucide-react'
+import { BookOpenCheck, Pencil, Plus, Trash2, Upload, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api, { apiErrorMessage } from '../../services/api.js'
 import { EmptyState, ErrorState, PageLoading } from '../../components/ui/States.jsx'
 import './AdminCoursesPage.css'
+import { suggestCode } from '../../utils/codeSuggestion.js'
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', courseCode: '' })
+  const [form, setForm] = useState({ name: '', courseCode: '', description: '' })
+  const [editing, setEditing] = useState(null)
   const [saving, setSaving] = useState(false)
   const [busyId, setBusyId] = useState('')
 
@@ -42,12 +44,37 @@ export default function AdminCoursesPage() {
   }, [ordered])
   const activeCount = courses.filter((course) => course.isActive).length
 
+  function openCreate() {
+    if (formOpen && !editing) { setFormOpen(false); return }
+    setEditing(null); setForm({ name: '', courseCode: '', description: '' }); setFormOpen(true)
+  }
+
+  function openEdit(course) {
+    setEditing(course)
+    setForm({ name: course.name || '', courseCode: course.courseCode || '', description: course.description || '' })
+    setFormOpen(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function closeForm() { setFormOpen(false); setEditing(null) }
+
   async function createCourse(event) {
     event.preventDefault(); setSaving(true)
+    if (editing) {
+      try {
+        // Empty code keeps the current code.
+        const { data } = await api.put(`/admin/courses/${editing._id}`, { name: form.name, courseCode: form.courseCode.trim(), description: form.description })
+        setCourses((current) => current.map((item) => String(item._id) === String(editing._id) ? data.course : item))
+        closeForm()
+        toast.success('Course updated')
+      } catch (requestError) { toast.error(apiErrorMessage(requestError)) }
+      finally { setSaving(false) }
+      return
+    }
     try {
-      const payload = new FormData(); payload.append('name', form.name); payload.append('courseCode', form.courseCode)
+      const payload = new FormData(); payload.append('name', form.name); payload.append('courseCode', form.courseCode.trim() === suggestCode(form.name, { numbered: true }) ? '' : form.courseCode.trim())
       await api.post('/admin/courses', payload)
-      setForm({ name: '', courseCode: '' }); setFormOpen(false)
+      setForm({ name: '', courseCode: '', description: '' }); setFormOpen(false)
       toast.success('Course created. Assign it to a teacher from the Teachers section.')
       await load()
     } catch (requestError) { toast.error(apiErrorMessage(requestError)) }
@@ -82,15 +109,15 @@ export default function AdminCoursesPage() {
   if (error && !courses.length) return <ErrorState message={error} onRetry={load} />
 
   return <div className="admin-courses-page admin-courses-compact">
-    <div className="section-title-row"><div><div className="section-kicker">ACADEMIC MANAGEMENT</div><h1>Courses</h1><p>{activeCount} active course{activeCount === 1 ? '' : 's'} · {courses.length} total</p></div><button className="button-primary" onClick={() => setFormOpen((open) => !open)}><Plus size={15} /> Create course</button></div>
+    <div className="section-title-row"><div><div className="section-kicker">ACADEMIC MANAGEMENT</div><h1>Courses</h1><p>{activeCount} active course{activeCount === 1 ? '' : 's'} · {courses.length} total</p></div><button className="button-primary" onClick={openCreate}><Plus size={15} /> Create course</button></div>
     {error && <p role="alert" className="inline-error">{error}</p>}
-    {formOpen && <section className="panel admin-course-create-panel"><div className="panel-heading"><div><h2>Create a course</h2><p>Enter the course name and code.</p></div><button className="icon-button" onClick={() => setFormOpen(false)} aria-label="Close course form"><X size={17} /></button></div><form className="admin-course-create-form" onSubmit={createCourse}><label>Course name<input required maxLength={120} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. Introduction to Computing" /></label><label>Course code<input required maxLength={30} value={form.courseCode} onChange={(event) => setForm({ ...form, courseCode: event.target.value.toUpperCase() })} placeholder="e.g. CS101" /></label><div className="admin-course-create-actions"><button type="button" className="button-secondary" onClick={() => setFormOpen(false)}>Cancel</button><button className="button-primary" disabled={saving}>{saving ? 'Creating…' : 'Create course'}</button></div></form></section>}
-    <section className="panel admin-course-table-panel"><div className="panel-heading"><div><h2>Course list</h2><p>Courses with their departments and classes.</p></div><BookOpenCheck size={18} className="panel-heading-icon" /></div>{!courses.length ? <EmptyState title="No courses yet" description="Create a course to get started." /> : <div className="table-scroll"><table className="data-table"><thead><tr><th>Course</th><th>Department</th><th>Class</th><th>Teacher</th><th>Status</th><th>Lessons</th><th>Actions</th></tr></thead><tbody>{grouped.map((group) => <FragmentRows key={group.key} group={group} busyId={busyId} onStatus={setCourseStatus} onDelete={deleteCourse} />)}</tbody></table></div>}</section>
+    {formOpen && <section className="panel admin-course-create-panel"><div className="panel-heading"><div><h2>{editing ? `Edit ${editing.name}` : 'Create a course'}</h2><p>{editing ? 'Change the course name, code, or description. Leave the code empty to keep the current one.' : 'Enter the course name; the code is generated automatically and can be changed.'}</p></div><button className="icon-button" onClick={closeForm} aria-label="Close course form"><X size={17} /></button></div><form className="admin-course-create-form" onSubmit={createCourse}><label>Course name<input required maxLength={120} value={form.name} onChange={(event) => { const name = event.target.value; setForm({ ...form, name, ...(!editing && form.courseCode === suggestCode(form.name, { numbered: true }) ? { courseCode: suggestCode(name, { numbered: true }) } : {}) }) }} placeholder="e.g. Introduction to Computing" /></label><label>Course code<input maxLength={30} value={form.courseCode} onChange={(event) => setForm({ ...form, courseCode: event.target.value.toUpperCase() })} placeholder={editing ? editing.courseCode : 'Auto-generated from name'} /></label>{editing && <label className="admin-course-form-description">Description<textarea maxLength={1000} rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>}<div className="admin-course-create-actions"><button type="button" className="button-secondary" onClick={closeForm}>Cancel</button><button className="button-primary" disabled={saving}>{saving ? (editing ? 'Saving…' : 'Creating…') : (editing ? 'Save changes' : 'Create course')}</button></div></form></section>}
+    <section className="panel admin-course-table-panel"><div className="panel-heading"><div><h2>Course list</h2><p>Courses with their departments and classes.</p></div><BookOpenCheck size={18} className="panel-heading-icon" /></div>{!courses.length ? <EmptyState title="No courses yet" description="Create a course to get started." /> : <div className="table-scroll"><table className="data-table"><thead><tr><th>Course</th><th>Department</th><th>Class</th><th>Teacher</th><th>Status</th><th>Lessons</th><th>Actions</th></tr></thead><tbody>{grouped.map((group) => <FragmentRows key={group.key} group={group} busyId={busyId} onEdit={openEdit} onStatus={setCourseStatus} onDelete={deleteCourse} />)}</tbody></table></div>}</section>
   </div>
 }
 
-function FragmentRows({ group, busyId, onStatus, onDelete }) {
+function FragmentRows({ group, busyId, onEdit, onStatus, onDelete }) {
   return <>
-    {group.courses.map((course) => <tr key={course._id} className={!course.isActive ? 'course-inactive-row' : ''}><td><b>{course.name}</b><small>{course.courseCode}</small></td><td>{course.department?.name || '—'}</td><td>{course.teachingAssignments?.length ? [...new Set(course.teachingAssignments.map((item) => `${item.class?.classCode || ''} ${item.class?.name || ''}`.trim()).filter(Boolean))].join(', ') : course.class ? `${course.class.classCode || ''} ${course.class.name || ''}`.trim() : '—'}</td><td>{course.teachingAssignments?.length ? [...new Set(course.teachingAssignments.map((item) => item.teacher?.fullName).filter(Boolean))].join(', ') : course.teacher?.fullName || 'Unassigned'}</td><td><span className={`status-pill ${course.isActive ? 'status-complete' : 'status-inactive'}`}>{course.isActive ? 'Active' : 'Inactive'}</span></td><td>{course.lessonCount || 0}</td><td><div className="course-row-actions"><button className="button-secondary" disabled={busyId === String(course._id)} onClick={() => onStatus(course)}>{busyId === String(course._id) ? 'Saving…' : course.isActive ? 'Deactivate' : 'Activate'}</button><button className="icon-button danger-icon" disabled={busyId === String(course._id)} onClick={() => onDelete(course)} aria-label={`Permanently delete ${course.name}`} title="Permanently delete"><Trash2 size={15} /></button></div></td></tr>)}
+    {group.courses.map((course) => <tr key={course._id} className={!course.isActive ? 'course-inactive-row' : ''}><td><b>{course.name}</b><small>{course.courseCode}</small></td><td>{course.department?.name || '—'}</td><td>{course.teachingAssignments?.length ? [...new Set(course.teachingAssignments.map((item) => `${item.class?.classCode || ''} ${item.class?.name || ''}`.trim()).filter(Boolean))].join(', ') : course.class ? `${course.class.classCode || ''} ${course.class.name || ''}`.trim() : '—'}</td><td>{course.teachingAssignments?.length ? [...new Set(course.teachingAssignments.map((item) => item.teacher?.fullName).filter(Boolean))].join(', ') : course.teacher?.fullName || 'Unassigned'}</td><td><span className={`status-pill ${course.isActive ? 'status-complete' : 'status-inactive'}`}>{course.isActive ? 'Active' : 'Inactive'}</span></td><td>{course.lessonCount || 0}</td><td><div className="course-row-actions"><button className="icon-button" disabled={busyId === String(course._id)} onClick={() => onEdit(course)} aria-label={`Edit ${course.name}`} title="Edit course"><Pencil size={15} /></button><button className="button-secondary" disabled={busyId === String(course._id)} onClick={() => onStatus(course)}>{busyId === String(course._id) ? 'Saving…' : course.isActive ? 'Deactivate' : 'Activate'}</button><button className="icon-button danger-icon" disabled={busyId === String(course._id)} onClick={() => onDelete(course)} aria-label={`Permanently delete ${course.name}`} title="Permanently delete"><Trash2 size={15} /></button></div></td></tr>)}
   </>
 }

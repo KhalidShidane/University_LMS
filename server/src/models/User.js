@@ -50,15 +50,73 @@ const userSchema = new mongoose.Schema({
   profileImage: { type: String, trim: true, maxlength: 2048, default: '' },
   isActive: { type: Boolean, default: true, index: true },
   sessionVersion: { type: Number, default: 0, min: 0, select: false },
+  // Email verification. Self-registered students start with false; legacy accounts are migrated to true.
+  emailVerified: { type: Boolean, index: true },
+  emailVerifiedAt: { type: Date, default: null },
+  emailVerificationLegacy: { type: Boolean, default: undefined },
+  emailVerificationTokenHash: { type: String, select: false, default: undefined },
+  emailVerification: {
+    expiresAt: { type: Date },
+    lastSentAt: { type: Date },
+    windowStartedAt: { type: Date },
+    sendCount: { type: Number, min: 0 },
+    deliveryStatus: { type: String, enum: ['pending', 'sent', 'failed'] },
+    deliveryError: { type: String, maxlength: 60 },
+  },
+  // Password reset: only a hash of the single-use token is stored.
+  passwordResetTokenHash: { type: String, select: false, default: undefined },
+  passwordReset: {
+    expiresAt: { type: Date },
+    requestedAt: { type: Date },
+  },
+  // Two-step verification (TOTP). Secrets are AES-256-GCM encrypted; recovery codes are hashes.
+  twoFactor: {
+    enabled: { type: Boolean },
+    secret: { type: String, select: false },
+    pendingSecret: { type: String, select: false },
+    recoveryCodes: { type: [String], select: false, default: undefined },
+    lastUsedStep: { type: Number },
+    enabledAt: { type: Date },
+  },
+  // Password-guessing protection: consecutive failures and a temporary lock.
+  loginLock: {
+    failures: { type: Number, min: 0 },
+    lastFailedAt: { type: Date },
+    until: { type: Date },
+  },
+  // Per-user interface settings (e.g. dark mode applies only to this user's own dashboard).
+  uiPreferences: {
+    theme: { type: String, enum: ['light', 'dark'], default: undefined },
+  },
+  // Optional email notifications (missing = enabled). Account/security emails are always sent.
+  notificationPreferences: {
+    email: {
+      quizzes: { type: Boolean },
+      assignments: { type: Boolean },
+      lessons: { type: Boolean },
+      materials: { type: Boolean },
+      courses: { type: Boolean },
+      announcements: { type: Boolean },
+      reminders: { type: Boolean },
+    },
+  },
 }, {
   timestamps: true,
   versionKey: false,
-  toJSON: { transform(_document, record) { delete record.passwordHash; return record } },
+  toJSON: { transform(_document, record) { delete record.passwordHash; delete record.emailVerificationTokenHash; delete record.passwordResetTokenHash; return record } },
 })
 
 userSchema.index(
   { studentId: 1 },
   { unique: true, partialFilterExpression: { studentId: { $type: 'string' } } },
+)
+userSchema.index(
+  { passwordResetTokenHash: 1 },
+  { unique: true, partialFilterExpression: { passwordResetTokenHash: { $type: 'string' } } },
+)
+userSchema.index(
+  { emailVerificationTokenHash: 1 },
+  { unique: true, partialFilterExpression: { emailVerificationTokenHash: { $type: 'string' } } },
 )
 userSchema.path('assignedClasses').validate(
   (classIds) => new Set(classIds.map(String)).size === classIds.length,

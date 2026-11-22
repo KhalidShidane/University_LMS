@@ -10,6 +10,7 @@ import Quiz from '../models/Quiz.js'
 import Submission from '../models/Submission.js'
 import { hashPassword, isPasswordLengthValid } from '../services/password.service.js'
 import { deleteManagedRecord } from '../services/adminDeletion.service.js'
+import { createWithGeneratedCode } from '../services/codeGenerator.service.js'
 
 const academicModels = { faculties: Faculty, departments: Department, classes: Class }
 const userProfile = (query) => query
@@ -210,7 +211,12 @@ export async function createAcademicRecord(req, res) {
   if (!Model) return res.status(404).json({ success: false, message: 'Academic collection not found' })
   const payload = academicPayload(req.params.type, req.body || {})
   await validateAcademicParents(req.params.type, payload)
-  const record = await Model.create(payload)
+  const codeField = req.params.type === 'classes' ? 'classCode' : 'code'
+  const providedCode = typeof payload[codeField] === 'string' ? payload[codeField].trim() : ''
+  if (providedCode && await Model.exists({ [codeField]: providedCode.toUpperCase() })) throw Object.assign(new Error(`The code ${providedCode.toUpperCase()} is already in use; choose another or leave it empty to generate one`), { status: 409 })
+  const record = providedCode
+    ? await Model.create({ ...payload, [codeField]: providedCode })
+    : await createWithGeneratedCode(Model, codeField, payload.name, (code) => Model.create({ ...payload, [codeField]: code }), { maxLength: codeField === 'classCode' ? 30 : 20 })
   return res.status(201).json({ success: true, record })
 }
 
@@ -292,7 +298,7 @@ export async function createTeacher(req, res) {
     : department ? [await activeDepartmentForFaculty(department)] : []
   const departmentIds = selectedDepartments.map((item) => String(item._id))
   await activeClassesForDepartments(assignedClasses, departmentIds)
-  const teacher = await User.create({ fullName: fullName.trim(), email: email.trim().toLowerCase(), passwordHash: await hashPassword(password), role: 'teacher', ...(selectedDepartments.length ? { department: selectedDepartments[0]._id, departments: selectedDepartments.map((item) => item._id) } : {}), assignedClasses })
+  const teacher = await User.create({ fullName: fullName.trim(), email: email.trim().toLowerCase(), passwordHash: await hashPassword(password), role: 'teacher', emailVerified: true, ...(selectedDepartments.length ? { department: selectedDepartments[0]._id, departments: selectedDepartments.map((item) => item._id) } : {}), assignedClasses })
   const result = await userProfile(User.findById(teacher._id).select('fullName email role department departments assignedClasses profileImage isActive createdAt')).lean()
   return res.status(201).json({ success: true, teacher: result })
 }
@@ -393,6 +399,21 @@ export async function getStudent(req, res) {
     .lean()
   if (!student) return res.status(404).json({ success: false, message: 'Student not found' })
   return res.json({ success: true, student })
+}
+
+export async function createStudent(req, res) {
+  const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {}
+  const { fullName, email, password, studentId, faculty: facultyId, department: departmentId, class: classId } = body
+  if (typeof fullName !== 'string' || !fullName.trim() || typeof email !== 'string' || !email.trim() || typeof studentId !== 'string' || !studentId.trim() || !facultyId || !departmentId || !classId || !password) throw validationError('Name, email, Student ID, faculty, department, class, and temporary password are required')
+  if (fullName.trim().length > 160 || email.trim().length > 254 || studentId.trim().length > 40) throw validationError('One or more fields exceed the allowed length')
+  if (!isPasswordLengthValid(password)) throw validationError('Temporary password must be 8 or more characters and no more than 72 bytes')
+  const department = await activeStudentPlacement({ facultyId, departmentId, classId })
+  const normalizedEmail = email.trim().toLowerCase()
+  if (await User.exists({ email: normalizedEmail })) throw Object.assign(new Error('An account with this email already exists'), { status: 409 })
+  if (await User.exists({ role: 'student', studentId: studentId.trim() })) throw Object.assign(new Error('A student with this Student ID already exists'), { status: 409 })
+  const student = await User.create({ fullName: fullName.trim(), email: normalizedEmail, passwordHash: await hashPassword(password), role: 'student', emailVerified: true, studentId: studentId.trim(), department: department._id, class: classId })
+  const result = await userProfile(User.findById(student._id).select('fullName email role studentId department class profileImage isActive createdAt')).lean()
+  return res.status(201).json({ success: true, student: result })
 }
 
 export async function updateStudent(req, res) {

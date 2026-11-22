@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { migrateLegacyEmailVerification } from '../services/emailVerification.service.js'
 
 const CONNECTION_STATES = {
   0: 'disconnected',
@@ -48,7 +49,10 @@ export async function connectDatabase({
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       await connect(uri, { serverSelectionTimeoutMS })
-      if (mongoose.connection.readyState === 1) await migrateCourseCodeIndex()
+      if (mongoose.connection.readyState === 1) {
+        await migrateCourseCodeIndex()
+        await migrateLegacyEmailVerification()
+      }
       return mongoose.connection
     } catch (error) {
       lastError = error

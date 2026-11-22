@@ -50,6 +50,8 @@ const quizSchema = new mongoose.Schema({
   status: { type: String, enum: ['draft', 'published', 'closed'], default: 'draft', index: true },
   isPublished: { type: Boolean, default: false, index: true },
   showResults: { type: Boolean, default: false },
+  // First time the quiz was published; drives which deadline reminders still apply.
+  publishedAt: { type: Date, default: null },
 }, { timestamps: true, versionKey: false })
 
 quizSchema.pre('validate', async function validateQuiz() {
@@ -57,6 +59,7 @@ quizSchema.pre('validate', async function validateQuiz() {
   if (this.isModified('status') || this.isNew) this.isPublished = this.status === 'published'
   else if (this.isModified('isPublished')) this.status = this.isPublished ? 'published' : 'draft'
   else if (this.status === 'draft' && this.isPublished) this.status = 'published'
+  if (this.status === 'published' && !this.publishedAt) this.publishedAt = new Date()
   if (this.dueDate && this.availableFrom && this.dueDate <= this.availableFrom) {
     this.invalidate('dueDate', 'End date must be later than the start date')
   }

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { downloadCourseMaterialsZip } from '../controllers/downloads.controller.js'
 import multer from 'multer'
 import asyncHandler from '../middleware/asyncHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js'
@@ -39,6 +40,7 @@ router.get('/classes', asyncHandler(getStudentClasses))
 router.get('/courses', asyncHandler(listStudentCourses))
 router.get('/courses/:id/cover', asyncHandler(getCourseCover))
 router.get('/courses/:courseId/lessons', asyncHandler(listStudentCourseLessons))
+router.get('/courses/:courseId/materials/download', asyncHandler(downloadCourseMaterialsZip))
 router.get('/courses/:courseId/lessons/:lessonId', asyncHandler(getStudentCourseLesson))
 router.get('/lessons', asyncHandler(listStudentLessons))
 router.get('/lessons/:id', asyncHandler(getStudentLesson))

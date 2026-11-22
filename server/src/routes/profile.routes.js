@@ -3,6 +3,7 @@ import multer from 'multer'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import asyncHandler from '../middleware/asyncHandler.js'
 import { getProfilePhoto, removeProfilePhoto, updateOwnProfile, uploadProfilePhoto } from '../controllers/profile.controller.js'
+import { getNotificationPreferences, updateNotificationPreferences, updateUiPreferences } from '../controllers/notificationPreferences.controller.js'
 
 const router = Router()
 const imageUpload = multer({
@@ -19,6 +20,9 @@ const imageUpload = multer({
 })
 
 router.use(requireAuth)
+router.get('/notification-preferences', asyncHandler(getNotificationPreferences))
+router.put('/notification-preferences', asyncHandler(updateNotificationPreferences))
+router.put('/ui-preferences', asyncHandler(updateUiPreferences))
 router.get('/:userId/photo', asyncHandler(getProfilePhoto))
 router.patch('/', asyncHandler(updateOwnProfile))
 router.post('/photo', imageUpload.single('photo'), asyncHandler(uploadProfilePhoto))

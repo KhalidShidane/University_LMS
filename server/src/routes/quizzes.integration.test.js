@@ -147,7 +147,12 @@ test('quizzes enforce class access, server timers, answer privacy, grading, and 
     const objectiveResult = await (await studentRequest(`/student/attempts/${objectiveStart.attempt.id}/result`)).json()
     assert.equal(objectiveResult.released, true)
     assert.equal(objectiveResult.detailsReleased, false)
-    assert.equal('questions' in objectiveResult.result, false)
+    // Before details are released, students see only per-question marks: never the correct
+    // answers, the answer options, or their own selections.
+    for (const question of objectiveResult.result.questions) {
+      assert.deepEqual(Object.keys(question).sort(), ['id', 'marks', 'marksAwarded', 'questionText', 'questionType'])
+    }
+    assert.equal(JSON.stringify(objectiveResult).includes('correct'), false)
     const objectiveHistory = (await (await studentRequest('/student/quizzes')).json()).quizzes.find((item) => item._id === objectiveQuiz._id)
     assert.equal(objectiveHistory.attempt.scoreAvailable, true)
     assert.equal(objectiveHistory.attempt.score, 3)

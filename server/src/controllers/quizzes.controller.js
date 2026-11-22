@@ -4,6 +4,7 @@ import Quiz from '../models/Quiz.js'
 import QuizAttempt from '../models/QuizAttempt.js'
 import User from '../models/User.js'
 import { createNotification, notifyClassStudents, notifyUsers } from '../services/notifications.service.js'
+import { emailQuizPublished, queueEmailTask } from '../services/emailNotifications.service.js'
 
 const validStatuses = ['draft', 'published', 'closed']
 
@@ -152,7 +153,7 @@ export async function createTeacherQuiz(req, res) {
   await requireAssignedClass(req.user, input.class)
   if (!input.title || input.durationMinutes === undefined || !input.questions) fail(400, 'Add a title, duration, class, and at least one question')
   const quiz = await Quiz.create({ ...input, createdBy: req.user._id, status: input.status || 'draft' })
-  if (quiz.status === 'published') await notifyClassStudents(quiz.class, { type: 'new_quiz', title: 'New quiz available', message: `${quiz.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'quiz', relatedEntityId: quiz._id }, `quiz-published:${quiz._id}`)
+  if (quiz.status === 'published') { await notifyClassStudents(quiz.class, { type: 'new_quiz', title: 'New quiz available', message: `${quiz.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'quiz', relatedEntityId: quiz._id }, `quiz-published:${quiz._id}`); queueEmailTask('quiz', () => emailQuizPublished(quiz._id)) }
   await quiz.populate('class', 'name classCode')
   return res.status(201).json({ success: true, quiz: safeQuiz(quiz, { includeCorrect: true }) })
 }
@@ -175,7 +176,7 @@ export async function updateTeacherQuiz(req, res) {
   if (hasAttempts && 'class' in input && String(input.class) !== String(quiz.class)) fail(409, 'A quiz class cannot change after students start attempts')
   for (const [key, value] of Object.entries(input)) quiz.set(key, value)
   await quiz.save()
-  if (!wasPublished && quiz.status === 'published') await notifyClassStudents(quiz.class, { type: 'new_quiz', title: 'New quiz available', message: `${quiz.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'quiz', relatedEntityId: quiz._id }, `quiz-published:${quiz._id}`)
+  if (!wasPublished && quiz.status === 'published') { await notifyClassStudents(quiz.class, { type: 'new_quiz', title: 'New quiz available', message: `${quiz.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'quiz', relatedEntityId: quiz._id }, `quiz-published:${quiz._id}`); queueEmailTask('quiz', () => emailQuizPublished(quiz._id)) }
   await quiz.populate('class', 'name classCode')
   return res.json({ success: true, quiz: safeQuiz(quiz, { includeCorrect: true }) })
 }
@@ -194,7 +195,7 @@ export async function updateTeacherQuizStatus(req, res) {
   const wasPublished = quiz.status === 'published' || quiz.isPublished
   quiz.status = status
   await quiz.save()
-  if (!wasPublished && status === 'published') await notifyClassStudents(quiz.class, { type: 'new_quiz', title: 'New quiz available', message: `${quiz.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'quiz', relatedEntityId: quiz._id }, `quiz-published:${quiz._id}`)
+  if (!wasPublished && status === 'published') { await notifyClassStudents(quiz.class, { type: 'new_quiz', title: 'New quiz available', message: `${quiz.title} is ready for your class.`, senderId: req.user._id, relatedEntityType: 'quiz', relatedEntityId: quiz._id }, `quiz-published:${quiz._id}`); queueEmailTask('quiz', () => emailQuizPublished(quiz._id)) }
   return res.json({ success: true, quiz: safeQuiz(quiz) })
 }
 

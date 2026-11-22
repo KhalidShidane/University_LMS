@@ -82,3 +82,21 @@
     min-height: 0;
   }
 }
+
+/* Add materials to an existing lesson */
+.add-materials-dialog { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow-y: auto; margin: auto; }
+.add-materials-form { display: grid; gap: 12px; }
+.add-materials-drop { display: grid; justify-items: center; gap: 6px; width: 100%; padding: 26px 16px; border: 2px dashed var(--line-strong, #cbd5e1); border-radius: 12px; background: var(--surface-2); color: var(--ink-2); text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+.add-materials-drop:hover, .add-materials-drop.is-dragging { border-color: var(--blue, #2563eb); background: var(--surface); }
+.add-materials-drop svg { color: var(--blue, #2563eb); }
+.add-materials-drop b { font-size: 13px; }
+.add-materials-drop small { color: var(--muted); font-size: 11px; }
+.add-materials-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.add-materials-list li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 12px; }
+.add-materials-list li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.add-materials-list li small { color: var(--muted); white-space: nowrap; }
+.add-materials-progress { height: 6px; overflow: hidden; border-radius: 999px; background: var(--surface-2); }
+.add-materials-progress span { display: block; height: 100%; background: var(--blue, #2563eb); transition: width .2s; }
+.add-materials-hint { margin: 0; color: var(--muted); font-size: 11px; }
+.add-materials-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 520px) { .add-materials-actions > * { flex: 1 1 100%; justify-content: center; } }

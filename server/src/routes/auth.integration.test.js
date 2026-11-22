@@ -9,6 +9,7 @@ import Department from '../models/Department.js'
 import Class from '../models/Class.js'
 import { hashPassword } from '../services/password.service.js'
 import { sessionCookieOptions } from '../middleware/auth.middleware.js'
+import { setEmailTransport } from '../services/email/email.service.js'
 
 test('authentication registration, sessions, profile, and role access', {
   skip: !process.env.MONGODB_TEST_URI && 'Set MONGODB_TEST_URI to run isolated authentication integration checks',
@@ -22,6 +23,8 @@ test('authentication registration, sessions, profile, and role access', {
   process.env.JWT_SECRET = 'phase-3-isolated-test-secret-do-not-use-in-production'
   process.env.JWT_EXPIRES_IN = '2h'
   const server = app.listen(0)
+  const sentEmails = []
+  setEmailTransport({ name: 'test', async send(message) { sentEmails.push(message); return { providerMessageId: `test-${sentEmails.length}` } } })
 
   try {
     await new Promise((resolve) => server.once('listening', resolve))
@@ -62,14 +65,25 @@ test('authentication registration, sessions, profile, and role access', {
     const registerResponse = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(` STUDENT_${suffix}@example.edu `, `STU${suffix}`)) })
     assert.equal(registerResponse.status, 201)
     const registerResult = await registerResponse.json()
-    assert.equal(registerResult.user.role, 'student')
-    assert.equal(registerResult.user.email, `student_${suffix}@example.edu`)
-    assert.equal(registerResult.user.fullName, 'Newly Registered Student')
-    assert.equal(registerResult.user.faculty.name, faculty.name)
-    assert.equal(registerResult.user.department.name, department.name)
-    assert.equal(registerResult.user.class.name, academicClass.name)
+    assert.equal(registerResult.verificationRequired, true)
+    assert.equal(registerResult.emailSent, true)
     assert.equal(JSON.stringify(registerResult).includes('passwordHash'), false)
-    const studentCookie = registerResponse.headers.get('set-cookie')?.split(';')[0]
+    assert.equal(registerResponse.headers.get('set-cookie'), null)
+    const blockedLogin = await request('/auth/login', { method: 'POST', body: JSON.stringify({ email: `student_${suffix}@example.edu`, password: 'StudentPassword123' }) })
+    assert.equal(blockedLogin.status, 403)
+    assert.equal((await blockedLogin.json()).code, 'EMAIL_NOT_VERIFIED')
+    const verificationToken = new URL(sentEmails.at(-1).text.match(/https?:\/\/\S+/)[0]).pathname.split('/').pop()
+    assert.equal((await request('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token: verificationToken }) })).status, 200)
+    const verifiedLoginResponse = await request('/auth/login', { method: 'POST', body: JSON.stringify({ email: `student_${suffix}@example.edu`, password: 'StudentPassword123' }) })
+    assert.equal(verifiedLoginResponse.status, 200)
+    const verifiedLoginResult = await verifiedLoginResponse.json()
+    assert.equal(verifiedLoginResult.user.role, 'student')
+    assert.equal(verifiedLoginResult.user.email, `student_${suffix}@example.edu`)
+    assert.equal(verifiedLoginResult.user.fullName, 'Newly Registered Student')
+    assert.equal(verifiedLoginResult.user.faculty.name, faculty.name)
+    assert.equal(verifiedLoginResult.user.department.name, department.name)
+    assert.equal(verifiedLoginResult.user.class.name, academicClass.name)
+    const studentCookie = verifiedLoginResponse.headers.get('set-cookie')?.split(';')[0]
     assert.match(studentCookie || '', /^lms_session=/)
     const storedStudent = await User.findOne({ email: `student_${suffix}@example.edu` }).select('+passwordHash').exec()
     assert.match(storedStudent.passwordHash, /^\$2[aby]\$/)
@@ -133,6 +147,7 @@ test('authentication registration, sessions, profile, and role access', {
     assert.match(logoutResponse.headers.get('set-cookie') || '', /lms_session=;/)
     assert.equal((await request('/auth/me')).status, 401)
   } finally {
+    setEmailTransport(null)
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
     if (mongoose.connection.readyState === 1) await mongoose.connection.dropDatabase()
     await disconnectDatabase()

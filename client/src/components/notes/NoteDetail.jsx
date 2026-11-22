@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Check, CloudOff, ExternalLink, LoaderCircle, Maximize2, Minimize2, PanelRightClose, RotateCcw, Save, SlidersHorizontal, Trash2, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, Check, CloudOff, Download, ExternalLink, LoaderCircle, Maximize2, Minimize2, PanelRightClose, RotateCcw, Save, SlidersHorizontal, Trash2, TriangleAlert, X } from 'lucide-react'
 import api, { apiErrorMessage } from '../../services/api.js'
+import { saveBlob } from '../../utils/download.js'
 import RichTextEditor from './RichTextEditor.jsx'
 import useNoteSaver from './useNoteSaver.js'
 import { NOTE_COLORS, clearBackup, lessonPath, notesApi, readBackup, relativeTime } from './noteUtils.js'
@@ -141,6 +142,17 @@ export default function NoteDetail({ noteId, userId, onBack, onClose, onSaved, o
     onSavedRef.current?.(serverNote)
   }
 
+  async function downloadNote() {
+    if (canSave) toast('Your latest unsaved changes are saved first.')
+    try {
+      if (canSave) await saveNow()
+      const response = await api.get(`/student/notes/${note._id}/download`, { responseType: 'blob' })
+      saveBlob(response, 'note.html')
+    } catch (error) {
+      toast.error(apiErrorMessage(error))
+    }
+  }
+
   async function remove() {
     if (!window.confirm(`Delete “${note.title || 'Untitled note'}”? This cannot be undone.`)) return
     try {
@@ -167,6 +179,7 @@ export default function NoteDetail({ noteId, userId, onBack, onClose, onSaved, o
         {showLessonLink && lessonHref && <Link className="note-icon-button" to={lessonHref} title="Open the lesson for this note" aria-label="Open lesson"><ExternalLink size={15} /></Link>}
         <button type="button" className={`note-icon-button ${detailsOpen ? 'is-active' : ''}`} onClick={() => setDetailsOpen((open) => !open)} aria-expanded={detailsOpen} title="Color, tags and link" aria-label="Note details"><SlidersHorizontal size={15} /></button>
         {onToggleExpand && <button type="button" className="note-icon-button" onClick={onToggleExpand} title={expanded ? 'Exit wide editor' : 'Expand editor'} aria-label={expanded ? 'Exit wide editor' : 'Expand editor'}>{expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>}
+        <button type="button" className="note-icon-button" onClick={downloadNote} title="Download this note" aria-label="Download this note"><Download size={15} /></button>
         <button type="button" className="note-icon-button danger-text" onClick={remove} title="Delete note" aria-label="Delete note"><Trash2 size={15} /></button>
         {onClose && <button type="button" className="note-icon-button" onClick={() => leave(onClose)} title="Close notes" aria-label="Close notes"><PanelRightClose size={15} /></button>}
       </span>

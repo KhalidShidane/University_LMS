@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { assertFileIsSafe } from '../services/fileScan.service.js'
 import { mkdir, unlink } from 'node:fs/promises'
 import { dirname, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -30,6 +31,7 @@ export async function uploadProfilePhoto(req, res) {
   const newPath = join(profileDirectory, storedName)
   await mkdir(profileDirectory, { recursive: true })
   const { writeFile } = await import('node:fs/promises')
+  await assertFileIsSafe(req.file.buffer, req.file.originalname)
   await writeFile(newPath, req.file.buffer, { flag: 'wx' })
 
   const user = await User.findById(req.user._id).exec()

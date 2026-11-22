@@ -1,0 +1,23 @@
+.two-factor-panel { display: grid; gap: 14px; margin-top: 16px; }
+.two-factor-panel h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.status-warning { background: var(--amber-soft, #fef3c7); color: var(--amber, #b45309); }
+.two-factor-state { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); }
+.two-factor-state.is-on { border-color: color-mix(in srgb, var(--green, #16a34a) 40%, transparent); color: var(--green, #16a34a); background: var(--green-soft, #f0fdf4); }
+.two-factor-state b { display: block; color: var(--ink); font-size: 13px; }
+.two-factor-state small { color: var(--muted); font-size: 11px; }
+.two-factor-setup { display: grid; gap: 12px; }
+.two-factor-setup label { display: grid; gap: 6px; color: var(--ink-2); font-size: 11px; font-weight: 650; }
+.two-factor-setup input { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink); background: var(--surface); font: inherit; }
+.two-factor-input { max-width: 220px; letter-spacing: 6px; font-size: 18px !important; font-weight: 700; text-align: center; }
+.two-factor-steps { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 12px; line-height: 1.8; }
+.two-factor-qr { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.two-factor-qr img { flex: 0 0 auto; border-radius: 8px; }
+.two-factor-qr small { display: block; color: #64748b; font-size: 11px; }
+.two-factor-qr code { display: block; margin-top: 4px; color: #0f172a; font-size: 13px; word-break: break-all; }
+.two-factor-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.two-factor-codes { display: grid; gap: 12px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: 12px; background: var(--surface-2); }
+.two-factor-codes p { margin: 0; color: var(--ink-2); font-size: 12px; }
+.two-factor-codes ol { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 16px; margin: 0; padding-left: 20px; }
+.two-factor-codes code { color: var(--ink); font-size: 14px; font-weight: 700; letter-spacing: 1px; }
+.two-factor-muted { margin: 0; color: var(--muted); font-size: 11px; }
+@media (max-width: 520px) { .two-factor-actions > * { flex: 1 1 100%; justify-content: center; } }

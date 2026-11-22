@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { assertFileIsSafe } from './fileScan.service.js'
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -45,6 +46,7 @@ export function hasSafeSignature(file, extension) {
 export async function storeLessonFile(file, extension) {
   const storedName = `${randomUUID()}${extension}`
   await mkdir(lessonDirectory, { recursive: true })
+  await assertFileIsSafe(file.buffer, file.originalname)
   await writeFile(join(lessonDirectory, storedName), file.buffer, { flag: 'wx' })
   return storedName
 }

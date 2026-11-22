@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { exportClassGradebook, listGradebookItems } from '../controllers/gradebook.controller.js'
 import multer from 'multer'
 import asyncHandler from '../middleware/asyncHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js'
@@ -29,6 +30,8 @@ router.get('/analytics/classes/:classId', asyncHandler(teacherAnalyticsClass))
 router.get('/analytics/students/:studentId', asyncHandler(teacherAnalyticsStudent))
 router.get('/dashboard', asyncHandler(getTeacherDashboard))
 router.get('/classes', asyncHandler(getTeachingClasses))
+router.get('/gradebook/:classId/items', asyncHandler(listGradebookItems))
+router.get('/gradebook/:classId/export', asyncHandler(exportClassGradebook))
 router.get('/courses', asyncHandler(listTeacherCourses))
 router.get('/courses/:id/cover', asyncHandler(getCourseCover))
 router.get('/classes/:id/students', asyncHandler(getTeachingClassStudents))
