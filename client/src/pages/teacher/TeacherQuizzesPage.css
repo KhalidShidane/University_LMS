@@ -1,0 +1,55 @@
+.teacher-quizzes-page { display: grid; gap: 16px; }
+.quiz-builder-panel { padding: 19px; }
+.quiz-builder-panel > .panel-heading h2 { margin: 5px 0; font-size: 18px; }
+.quiz-builder-panel > .panel-heading p { margin: 0; color: var(--muted); font-size: 11px; }
+.quiz-builder-form { display: grid; gap: 14px; margin-top: 16px; }
+.quiz-builder-form > label,.quiz-builder-grid > label,.quiz-question-fields > label,.quiz-option-builder > label,.quiz-correct-bool { display: grid; gap: 6px; color: var(--ink-2); font-size: 11px; font-weight: 600; }
+.quiz-builder-form input,.quiz-builder-form select,.quiz-builder-form textarea,.quiz-grade-fields input { width: 100%; min-height: 38px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--surface); font: inherit; font-weight: 400; }
+.quiz-builder-form textarea { resize: vertical; }
+.quiz-builder-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 11px; }
+.quiz-question-builder-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; }
+.quiz-question-builder-heading h3 { margin: 0; color: var(--ink); font-size: 14px; }
+.quiz-question-builder-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+.quiz-question-builder { display: grid; gap: 10px; }
+.quiz-question-editor { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+.quiz-question-editor-top { display: flex; align-items: center; justify-content: space-between; color: var(--ink-2); font-size: 11px; }
+.quiz-question-editor-top > div { display: flex; gap: 4px; }
+.quiz-question-editor-top button:disabled { opacity: .4; }
+.quiz-question-fields { display: grid; grid-template-columns: minmax(0,1fr) 180px 100px; align-items: end; gap: 10px; }
+.quiz-option-builder { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+.quiz-answer-row { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.quiz-answer-row > label { display: grid; gap: 5px; min-width: 180px; color: var(--ink-2); font-size: 10px; font-weight: 600; }
+.quiz-answer-row select,.quiz-correct-bool select { min-height: 36px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--surface); }
+.quiz-manual-note { margin: 0; color: var(--muted); font-size: 10px; }
+.quiz-builder-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.quiz-builder-footer > span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+.quiz-builder-footer > div { display: flex; gap: 8px; }
+.teacher-quiz-list { display: grid; gap: 12px; }
+.teacher-quiz-card { display: grid; grid-template-columns: 40px minmax(0,1fr) auto; align-items: start; gap: 12px; padding: 16px; }
+.teacher-quiz-icon,.student-quiz-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 9px; color: var(--violet); background: #f1edff; }
+.teacher-quiz-content { min-width: 0; }
+.teacher-quiz-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.teacher-quiz-title h2 { margin: 0; color: var(--ink); font-size: 14px; }
+.teacher-quiz-content > p { margin: 7px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.teacher-quiz-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; max-width: 330px; }
+.teacher-quiz-actions button { min-height: 32px; font-size: 10px; }
+.teacher-quiz-actions button svg { vertical-align: middle; }
+.quiz-attempts-modal { display: flex; width: min(900px,100%); max-height: min(88vh,850px); flex-direction: column; padding: 19px; overflow: hidden; }
+.quiz-attempts-modal > .panel-heading { flex: 0 0 auto; }
+.quiz-attempts-modal > .panel-heading h2 { margin: 5px 0; font-size: 17px; }
+.quiz-attempt-list { display: grid; gap: 10px; overflow: auto; padding: 12px 2px; }
+.quiz-attempt-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.quiz-attempt-student b,.quiz-attempt-student small { display: block; }
+.quiz-attempt-student b { color: var(--ink-2); font-size: 11px; }
+.quiz-attempt-student small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.quiz-attempt-answers { display: grid; grid-column: 1/-1; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.quiz-graded-answer { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 8px 0; }
+.quiz-graded-answer > div:first-child { min-width: 0; }
+.quiz-graded-answer > div:first-child b { color: var(--ink-2); font-size: 10px; }
+.quiz-graded-answer p { margin: 5px 0 0; color: var(--muted); font-size: 10px; white-space: pre-wrap; }
+.quiz-graded-answer small { display: block; margin-top: 4px; color: var(--green); font-size: 9px; }
+.quiz-grade-fields { display: grid; grid-template-columns: 86px minmax(140px,1fr) auto; gap: 6px; align-items: center; }
+.quiz-grade-fields input { min-height: 33px; font-size: 10px; }
+.quiz-grade-fields .button-primary { min-height: 33px; padding: 0 10px; font-size: 10px; }
+@media (max-width: 900px) { .teacher-quiz-card { grid-template-columns: 38px minmax(0,1fr); }.teacher-quiz-actions { grid-column: 2; justify-content: flex-start; max-width: none; }.quiz-builder-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 600px) { .quiz-builder-grid,.quiz-question-fields,.quiz-option-builder { grid-template-columns: minmax(0,1fr); }.quiz-question-builder-heading,.quiz-builder-footer { align-items: flex-start; flex-direction: column; }.quiz-builder-footer > div { width: 100%; }.quiz-builder-footer .button-primary { margin-left: auto; }.teacher-quiz-card { grid-template-columns: 1fr; }.teacher-quiz-actions { grid-column: auto; }.quiz-attempt-row { grid-template-columns: 1fr auto; }.quiz-attempt-student { grid-column: 1/-1; }.quiz-graded-answer { flex-direction: column; }.quiz-grade-fields { width: 100%; grid-template-columns: 1fr; } }

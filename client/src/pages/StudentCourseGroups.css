@@ -1,0 +1,9 @@
+.student-dashboard-course-group { display: grid; gap: 5px; margin-top: 12px; }
+.student-dashboard-course-group + .student-dashboard-course-group { padding-top: 10px; border-top: 1px solid var(--line); }
+.student-dashboard-course-group > b { color: var(--ink-2); font-size: 10px; }
+.student-dashboard-course-group > small { color: var(--muted); font-size: 9px; }
+.student-course-year-group { display: grid; gap: 11px; margin-top: 20px; }
+.student-course-year-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.student-course-year-heading h2 { margin: 0; color: var(--ink); font-size: 15px; }
+.student-course-year-heading span { color: var(--muted); font-size: 10px; }
+.student-course-year-empty { margin: 0; color: var(--muted); font-size: 11px; }

@@ -1,0 +1,4 @@
+.lesson-resource-links { display: grid; gap: 7px; }
+.lesson-resource-links a { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; color: var(--blue); background: var(--surface); font-size: 11px; text-decoration: none; }
+.lesson-resource-links a span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.lesson-resource-links a:hover { border-color: var(--blue); background: var(--blue-soft); }

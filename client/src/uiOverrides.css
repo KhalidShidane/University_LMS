@@ -1,0 +1,87 @@
+.topbar { position: sticky; top: 0; z-index: 18; }
+*, *::before, *::after { box-shadow: none !important; text-shadow: none !important; }
+.auth-brand-logo { filter: none !important; }
+.auth-login-emblem { border: 0; background: transparent; }
+.auth-login-emblem img { display: block; width: 40px; height: 44px; object-fit: contain; }
+.topbar-theme-toggle { width: 32px; height: 32px; color: var(--muted); }
+.topbar-theme-toggle:hover { color: var(--blue); background: var(--surface-2); }
+.bulk-import-panel { display: grid; gap: 12px; }
+.bulk-template-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.bulk-template-links .button-secondary { min-height: 34px; font-size: 9px; }
+.bulk-import-form { display: grid; grid-template-columns: minmax(130px,.7fr) minmax(220px,1.4fr) auto; align-items: end; gap: 10px; }
+.bulk-import-form label { display: grid; gap: 6px; color: var(--ink-2); font-size: 9px; font-weight: 650; }
+.bulk-import-form input,.bulk-import-form select { width: 100%; min-height: 36px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--ink); background: var(--surface); font: inherit; font-size: 10px; }
+.bulk-import-form .button-primary { min-height: 36px; font-size: 9px; white-space: nowrap; }
+.bulk-import-result { display: grid; gap: 7px; color: var(--ink-2); font-size: 10px; }
+.bulk-import-result details { color: #a14838; }
+.bulk-import-result summary { cursor: pointer; }
+.bulk-import-result ul { display: grid; gap: 4px; max-height: 180px; overflow: auto; padding-left: 20px; }
+.semester-manager { display: grid; gap: 10px; padding: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.semester-manager > div:first-child b { color: var(--ink-2); font-size: 10px; }
+.semester-manager > div:first-child p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
+.semester-manager > form { display: flex; gap: 8px; }
+.semester-manager input { flex: 1; min-width: 0; min-height: 34px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--ink); background: var(--surface); font: inherit; font-size: 10px; }
+.semester-manager .button-secondary { min-height: 34px; font-size: 9px; white-space: nowrap; }
+.semester-option-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.semester-option { display: flex; align-items: center; gap: 5px; min-height: 30px; padding: 2px 4px 2px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink-2); font-size: 9px; }
+.semester-option .button-quiet { min-height: 24px; color: var(--red); font-size: 8px; }
+@media(max-width:600px) { .bulk-import-form { grid-template-columns: 1fr; }.bulk-import-form .button-primary { width: 100%; } }
+.teacher-open-class{display:inline-flex;align-items:center;gap:7px;margin-top:8px;min-height:31px;padding:0 10px;font-size:10px}.teacher-class-courses{padding:16px;margin-bottom:14px}.teacher-class-course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.teacher-class-course-card{display:grid;gap:16px;align-content:space-between;padding:15px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.teacher-class-course-card h3{margin:5px 0;color:var(--ink);font-size:14px}.teacher-class-course-card p{margin:0 0 6px;color:var(--muted);font-size:10px}.teacher-class-course-card small{color:var(--muted);font-size:10px}.teacher-class-course-card .button-primary{display:inline-flex;justify-content:center;align-items:center;gap:7px;min-height:34px;font-size:10px}
+.teacher-class-course-image{display:grid;place-items:center;width:100%;height:110px;overflow:hidden;border-radius:8px;color:var(--blue);background:var(--surface-soft,#eef2f7)}.teacher-class-course-image img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* Lesson & course cards: large gradient cover (in place of a cover image) above a clean body.
+   Each card in a grid gets the next colour in the palette (cycles every 6 cards). */
+.teacher-lessons-page .lesson-management-card,
+.student-lessons-page .student-lesson-card,
+.teacher-class-course-card { --card-from: #2563eb; --card-to: #4f46e5; }
+:is(.teacher-lessons-page .lesson-management-card, .student-lessons-page .student-lesson-card, .teacher-class-course-card):nth-child(6n + 2) { --card-from: #0f766e; --card-to: #16a34a; }
+:is(.teacher-lessons-page .lesson-management-card, .student-lessons-page .student-lesson-card, .teacher-class-course-card):nth-child(6n + 3) { --card-from: #7c3aed; --card-to: #c026d3; }
+:is(.teacher-lessons-page .lesson-management-card, .student-lessons-page .student-lesson-card, .teacher-class-course-card):nth-child(6n + 4) { --card-from: #ea580c; --card-to: #e11d48; }
+:is(.teacher-lessons-page .lesson-management-card, .student-lessons-page .student-lesson-card, .teacher-class-course-card):nth-child(6n + 5) { --card-from: #0284c7; --card-to: #0d9488; }
+:is(.teacher-lessons-page .lesson-management-card, .student-lessons-page .student-lesson-card, .teacher-class-course-card):nth-child(6n + 6) { --card-from: #db2777; --card-to: #7e22ce; }
+
+:is(.lesson-cover, .teacher-class-course-image).gradient-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  color: #fff;
+  background-color: var(--card-to);
+  background-image:
+    radial-gradient(circle at 85% 18%, rgb(255 255 255 / 26%) 0, rgb(255 255 255 / 0%) 38%),
+    radial-gradient(circle at 10% 100%, rgb(255 255 255 / 16%) 0, rgb(255 255 255 / 0%) 42%),
+    linear-gradient(135deg, var(--card-from) 0%, var(--card-to) 100%);
+  background-size: auto;
+}
+/* Soft decorative rings */
+:is(.lesson-cover, .teacher-class-course-image).gradient-cover::before,
+:is(.lesson-cover, .teacher-class-course-image).gradient-cover::after {
+  content: '';
+  position: absolute;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+:is(.lesson-cover, .teacher-class-course-image).gradient-cover::before { right: -40px; bottom: -70px; width: 190px; height: 190px; }
+:is(.lesson-cover, .teacher-class-course-image).gradient-cover::after { left: -30px; top: -50px; width: 120px; height: 120px; }
+.gradient-cover > svg { position: relative; z-index: 1; filter: drop-shadow(0 4px 10px rgb(0 0 0 / 18%)); }
+.gradient-cover-label { position: relative; z-index: 1; padding: 4px 10px; border-radius: 999px; color: #fff; background: rgb(255 255 255 / 20%); font-size: 12px; font-weight: 700; letter-spacing: .6px; backdrop-filter: blur(4px); }
+.gradient-cover-number { position: relative; z-index: 1; color: #fff; font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: 1px; text-shadow: 0 4px 14px rgb(0 0 0 / 18%); }
+
+/* Bigger covers */
+.student-lessons-page .student-lesson-card .lesson-cover.gradient-cover { height: 190px; min-height: 190px; flex-basis: 190px; }
+.teacher-lessons-page .teacher-lesson-cover.gradient-cover { height: 190px; min-height: 190px; }
+.teacher-class-course-image.gradient-cover { height: 140px; border-radius: 10px; }
+.teacher-lessons-page .teacher-lesson-cover.gradient-cover .status-pill { position: absolute; top: 12px; left: 12px; z-index: 2; color: #fff; background: rgb(255 255 255 / 22%); backdrop-filter: blur(4px); }
+
+/* Card body stays clean and readable */
+.teacher-lessons-page .lesson-management-card,
+.student-lessons-page .student-lesson-card { overflow: hidden; }
+.teacher-lessons-page .lesson-management-card:hover,
+.student-lessons-page .student-lesson-card:hover,
+.teacher-class-course-card:hover { box-shadow: 0 14px 30px -16px var(--card-to); }
+.lesson-card-top { display: flex; justify-content: flex-start; margin-bottom: 8px; }
+.teacher-class-course-card h3 { font-weight: 700; }

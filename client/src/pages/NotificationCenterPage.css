@@ -1,0 +1,17 @@
+.notification-center-page { display: grid; gap: 14px; }
+.notification-center-count { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--blue); background: var(--surface); font-size: 10px; font-weight: 650; }
+.notification-center-panel { padding: 0; overflow: hidden; }
+.notification-center-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.notification-filter-tabs { display: flex; gap: 4px; }
+.notification-filter-tabs button { padding: 7px 11px; border: 1px solid transparent; border-radius: 6px; color: var(--muted); background: transparent; font-size: 10px; cursor: pointer; }
+.notification-filter-tabs .notification-filter-active { border-color: var(--line); color: var(--blue); background: var(--surface); font-weight: 650; }
+.notification-center-list { display: grid; }
+.notification-center-item { display: flex; align-items: center; gap: 8px; min-height: 79px; padding: 11px 15px; border-bottom: 1px solid var(--line); background: var(--surface); }.notification-center-item:hover { background: var(--surface-2); }
+.notification-center-main { display: grid; width: 100%; grid-template-columns: 9px minmax(0,1fr); align-items: start; gap: 11px; padding: 2px 0; border: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+.notification-center-dot { width: 7px; height: 7px; margin-top: 5px; border-radius: 50%; background: transparent; }.notification-center-item.notification-unread .notification-center-dot { background: var(--blue); }
+.notification-center-copy { display: grid; gap: 4px; min-width: 0; }.notification-center-copy b { color: var(--ink-2); font-size: 11px; }.notification-center-copy p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }.notification-center-copy time { color: var(--muted); font-size: 8px; }
+.notification-center-item.notification-unread { background: color-mix(in srgb, var(--blue-soft) 35%, var(--surface)); }
+.notification-delete { flex: 0 0 auto; color: var(--muted); }.notification-delete:hover { color: var(--red); }
+.notification-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 13px; border-top: 1px solid var(--line); }.notification-pagination span { color: var(--muted); font-size: 9px; }.notification-pagination .button-secondary { min-height: 30px; font-size: 9px; }
+.notification-center-panel > .loading-state { padding: 35px; }
+@media (max-width: 600px) { .notification-center-count { align-self: flex-start; }.notification-center-toolbar { align-items: flex-start; flex-direction: column; }.notification-center-item { padding: 10px; } }

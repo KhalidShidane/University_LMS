@@ -1,0 +1,5 @@
+.teacher-assigned-course-list{display:grid;gap:7px;margin-bottom:14px}.teacher-assigned-course-list>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:8px}.teacher-assigned-course-list b,.teacher-assigned-course-list small{display:block}.teacher-assigned-course-list b{font-size:11px;color:var(--ink-2)}.teacher-assigned-course-list small{margin-top:3px;font-size:9px;color:var(--muted)}.teacher-assign-course-form{margin-top:12px}.teacher-course-status-button{min-height:29px;padding:0 8px;font-size:9px;white-space:nowrap}
+
+.unsaved-changes-note{align-self:center;margin-right:auto;color:var(--amber,#b7791f);font-size:11px;font-weight:600}
+.teacher-assigned-course-list>div.course-pending-removal{opacity:.6;border-style:dashed}
+.teacher-assigned-course-list>div.course-pending-removal b{text-decoration:line-through}

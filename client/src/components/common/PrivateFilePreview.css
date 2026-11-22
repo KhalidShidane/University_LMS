@@ -1,0 +1,10 @@
+.private-office-document { max-height: min(72vh,850px); overflow: auto; padding: 24px clamp(16px,5vw,56px); color: var(--ink-2); background: var(--surface); font-size: 12px; line-height: 1.85; white-space: normal; }
+.private-office-document p { margin: 0 0 12px; white-space: pre-wrap; }
+.private-office-slides { display: grid; gap: 12px; max-height: min(72vh,850px); overflow: auto; padding: 16px; background: var(--surface-2); }
+.private-office-slide { min-height: 210px; padding: 22px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); box-shadow: 0 3px 12px #101b2b10; }
+.private-office-slide small { display: block; margin-bottom: 16px; color: var(--muted); font-size: 8px; font-weight: 750; letter-spacing: .8px; }
+.private-office-slide p { margin: 0 0 10px; font-size: 12px; line-height: 1.7; white-space: pre-wrap; }
+.private-pptx-viewer { display: grid; justify-items: center; gap: 12px; max-height: min(78vh,900px); overflow: auto; padding: 16px; background: var(--surface-2); }
+.private-pptx-slides { display: grid; justify-items: center; gap: 16px; width: 100%; min-height: 120px; }
+.private-pptx-controls { display: flex; align-items: center; justify-content: center; gap: 16px; min-height: 36px; color: var(--ink-2); font-size: 12px; font-weight: 650; }
+.private-pptx-controls button:disabled { opacity: .45; cursor: not-allowed; }
