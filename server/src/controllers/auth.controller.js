@@ -41,6 +41,9 @@ export async function registerStudent(req, res) {
   if (fullName.trim().length > 160 || email.trim().length > 254 || studentId.trim().length > 40) {
     return res.status(400).json({ success: false, message: 'One or more fields exceed the allowed length' })
   }
+  if (!/^\d{4}$/.test(studentId.trim())) {
+    return res.status(400).json({ success: false, message: 'Student ID must be exactly 4 digits' })
+  }
   if (!isPasswordLengthValid(password)) {
     return res.status(400).json({ success: false, message: 'Password must be 8 or more characters and no more than 72 bytes' })
   }

@@ -16,7 +16,7 @@ import { enqueueEmails, registerEmailCheck, startEmailQueueWorker } from './emai
 import { loadSystemSettings } from './systemSettings.service.js'
 
 const HOUR = 60 * 60 * 1000
-export const EMAIL_PREFERENCE_CATEGORIES = ['quizzes', 'assignments', 'lessons', 'materials', 'courses', 'announcements', 'reminders']
+export const EMAIL_PREFERENCE_CATEGORIES = ['quizzes', 'assignments', 'lessons', 'materials', 'announcements', 'reminders']
 export const REMINDER_WINDOWS = [{ key: '24h', ms: 24 * HOUR, template: 'deadline_reminder_24h' }, { key: '6h', ms: 6 * HOUR, template: 'deadline_reminder_6h' }]
 const COMPLETED_QUIZ_STATUSES = ['submitted', 'auto_submitted', 'graded']
 const PRIORITY = { reminder: 1, academic: 3, announcement: 5 }
@@ -120,21 +120,6 @@ export async function emailLessonMaterialsAdded(lessonId, materialIds, now = new
     template: 'material_published', category: 'materials', priority: PRIORITY.academic,
     data: { lessonTitle: lesson.title, courseName: course?.name || '', fileNames: added.map((item) => item.originalName), url: lessonUrl(lesson) },
   }, `material-published:${lesson._id}:${batchKey}`))
-}
-
-/** A course becomes available to a class when an admin assigns it to that class. */
-export async function emailCoursePublished(courseId, classId) {
-  const course = await Course.findById(courseId).select('name courseCode description isActive teachingAssignments').populate('teachingAssignments.teacher', 'fullName').lean()
-  if (!course?.isActive) return 0
-  const placement = (course.teachingAssignments || []).find((item) => String(item.class) === String(classId))
-  if (!placement) return 0
-  const academicClass = await Class.findById(classId).select('name isActive').lean()
-  if (!academicClass?.isActive) return 0
-  const students = await eligibleStudents({ class: classId }, 'courses')
-  return enqueueEmails(jobsFor(students, {
-    template: 'course_published', category: 'courses', priority: PRIORITY.academic,
-    data: { courseName: course.name, courseCode: course.courseCode, description: course.description, className: academicClass.name, teacherName: placement.teacher?.fullName || '', url: publicAppUrl(`/app/learning/courses/${course._id}`) },
-  }, `course-published:${course._id}:${classId}`))
 }
 
 export const ANNOUNCEMENT_AUDIENCES = ['none', 'all_students', 'faculty', 'department', 'class']

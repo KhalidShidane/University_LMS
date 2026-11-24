@@ -89,18 +89,6 @@ const templates = {
     url: data.url,
   }, data),
 
-  course_published: (data) => build({
-    heroIcon: ICONS.course,
-    subject: `New course available: ${data.courseName}`,
-    preheader: `${data.courseName} is now available to your class.`,
-    heading: 'A new course is available',
-    intro: `The course <strong>${escapeHtml(data.courseName)}</strong> is now available to your class.`,
-    rows: [['Course', data.courseName], ['Course code', data.courseCode], ['Class', data.className], ['Teacher', data.teacherName]],
-    body: data.description,
-    actionLabel: 'Open course',
-    url: data.url,
-  }, data),
-
   announcement: (data) => build({
     heroIcon: ICONS.announcement,
     subject: `Announcement: ${data.title}`,

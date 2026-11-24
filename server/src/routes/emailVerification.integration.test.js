@@ -81,7 +81,7 @@ test('student email verification: registration, tokens, login gate, resend, limi
     assert.equal((await request('/auth/login', { email: 'legacy@example.edu', password: 'LegacyPassword123' })).status, 200)
 
     // --- Successful registration sends a branded email through Resend with a hashed, expiring token.
-    const registered = await request('/auth/register', registration('amina@example.edu', 'EM001'))
+    const registered = await request('/auth/register', registration('amina@example.edu', '3001'))
     assert.equal(registered.status, 201)
     const registeredBody = await registered.json()
     assert.deepEqual([registeredBody.verificationRequired, registeredBody.emailSent], [true, true])
@@ -112,7 +112,7 @@ test('student email verification: registration, tokens, login gate, resend, limi
     assert.equal(await EmailLog.countDocuments({ type: 'email_verification', status: 'sent' }), 1)
 
     // --- No duplicate accounts: re-registering points to verification.
-    const duplicate = await request('/auth/register', registration('amina@example.edu', 'EM002'))
+    const duplicate = await request('/auth/register', registration('amina@example.edu', '3002'))
     assert.equal(duplicate.status, 409)
     assert.equal((await duplicate.json()).code, 'EMAIL_PENDING_VERIFICATION')
     assert.equal(await User.countDocuments({ email: 'amina@example.edu' }), 1)
@@ -194,7 +194,7 @@ test('student email verification: registration, tokens, login gate, resend, limi
     for (const [mode, code] of [['unauthorized', 'auth_failed'], ['outage', 'provider_error'], ['timeout', 'timeout']]) {
       fakeResend.state.mode = mode
       const email = `${mode}@example.edu`
-      const response = await request('/auth/register', registration(email, `EM-${mode}`))
+      const response = await request('/auth/register', registration(email, String(3010 + ['unauthorized', 'outage', 'timeout'].indexOf(mode))))
       assert.equal(response.status, 201, `${mode}: registration still succeeds`)
       assert.equal((await response.json()).emailSent, false)
       const user = await User.findOne({ email }).lean()
@@ -220,7 +220,7 @@ test('student email verification: registration, tokens, login gate, resend, limi
 
     // --- Missing configuration is handled the same way (no crash, nothing verified).
     delete process.env.RESEND_API_KEY
-    const unconfigured = await request('/auth/register', registration('noconfig@example.edu', 'EM-NC'))
+    const unconfigured = await request('/auth/register', registration('noconfig@example.edu', '3020'))
     assert.equal(unconfigured.status, 201)
     assert.equal((await unconfigured.json()).emailSent, false)
     // While the provider is down account-wide, resend says so honestly (same answer for every address).

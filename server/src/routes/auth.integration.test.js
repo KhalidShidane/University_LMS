@@ -62,7 +62,7 @@ test('authentication registration, sessions, profile, and role access', {
     const noSession = await request('/auth/me')
     assert.equal(noSession.status, 401)
 
-    const registerResponse = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(` STUDENT_${suffix}@example.edu `, `STU${suffix}`)) })
+    const registerResponse = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(` STUDENT_${suffix}@example.edu `, '1001')) })
     assert.equal(registerResponse.status, 201)
     const registerResult = await registerResponse.json()
     assert.equal(registerResult.verificationRequired, true)
@@ -107,18 +107,22 @@ test('authentication registration, sessions, profile, and role access', {
     const studentTeacherResponse = await request('/teacher/overview', { headers: { cookie: studentCookie } })
     assert.equal(studentTeacherResponse.status, 403)
 
-    const duplicateEmail = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`student_${suffix}@example.edu`, `STU_EMAIL${suffix}`)) })
+    const duplicateEmail = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`student_${suffix}@example.edu`, '1002')) })
     assert.equal(duplicateEmail.status, 409)
-    const duplicateId = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`second_${suffix}@example.edu`, `STU${suffix}`)) })
+    for (const badId of ['123', '12345', '12a4', 'STU1']) {
+      const badIdResponse = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`bad_id_${suffix}@example.edu`, badId)) })
+      assert.equal(badIdResponse.status, 400, `${badId} is not a 4-digit Student ID`)
+    }
+    const duplicateId = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`second_${suffix}@example.edu`, '1001')) })
     assert.equal(duplicateId.status, 409)
-    const wrongDepartment = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`wrong_dept_${suffix}@example.edu`, `WD${suffix}`, { department: String(otherDepartment._id), class: String(otherClass._id) })) })
+    const wrongDepartment = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`wrong_dept_${suffix}@example.edu`, '1003', { department: String(otherDepartment._id), class: String(otherClass._id) })) })
     assert.equal(wrongDepartment.status, 400)
-    const wrongFaculty = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`wrong_faculty_${suffix}@example.edu`, `WF${suffix}`, { faculty: String(otherFaculty._id) })) })
+    const wrongFaculty = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(`wrong_faculty_${suffix}@example.edu`, '1004', { faculty: String(otherFaculty._id) })) })
     assert.equal(wrongFaculty.status, 400)
     for (const [email, studentId, refs] of [
-      [`inactive_faculty_${suffix}@example.edu`, `IF${suffix}`, { faculty: String(inactiveFaculty._id) }],
-      [`inactive_department_${suffix}@example.edu`, `ID${suffix}`, { department: String(inactiveDepartment._id) }],
-      [`inactive_class_${suffix}@example.edu`, `IC${suffix}`, { class: String(inactiveClass._id) }],
+      [`inactive_faculty_${suffix}@example.edu`, '1005', { faculty: String(inactiveFaculty._id) }],
+      [`inactive_department_${suffix}@example.edu`, '1006', { department: String(inactiveDepartment._id) }],
+      [`inactive_class_${suffix}@example.edu`, '1007', { class: String(inactiveClass._id) }],
     ]) {
       const response = await request('/auth/register', { method: 'POST', body: JSON.stringify(body(email, studentId, refs)) })
       assert.equal(response.status, 400)

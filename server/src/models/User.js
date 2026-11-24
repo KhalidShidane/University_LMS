@@ -95,7 +95,6 @@ const userSchema = new mongoose.Schema({
       assignments: { type: Boolean },
       lessons: { type: Boolean },
       materials: { type: Boolean },
-      courses: { type: Boolean },
       announcements: { type: Boolean },
       reminders: { type: Boolean },
     },

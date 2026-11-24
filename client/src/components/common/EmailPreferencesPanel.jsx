@@ -8,7 +8,6 @@ const LABELS = {
   assignments: ['New assignments', 'When an assignment is published for your class'],
   lessons: ['New lessons', 'When a lesson is published'],
   materials: ['New course materials', 'When files are added to a published lesson'],
-  courses: ['New courses', 'When a course becomes available to your class'],
   announcements: ['Announcements', 'When the administration emails an announcement to your group'],
   reminders: ['Deadline reminders', '24 hours and 6 hours before an unfinished quiz or assignment is due'],
 }

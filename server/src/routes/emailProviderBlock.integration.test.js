@@ -73,19 +73,19 @@ test('email provider block (Resend 403 unverified domain): pause, preserve, admi
     // ---- 0. A block left over from a previous provider (no provider name) does not affect Resend.
     await EmailProviderState.create({ key: 'global', status: 'temporarily_blocked', since: new Date(), httpStatus: 401, providerErrorCode: 'old-provider' })
     clearProviderStatusCache()
-    assert.equal((await register('switch@example.edu', 'S-SW')).status, 201)
+    assert.equal((await register('switch@example.edu', '2001')).status, 201)
     assert.equal((await User.findOne({ email: 'switch@example.edu' }).lean()).emailVerification.deliveryStatus, 'sent', 'Resend sends despite the old block')
     assert.equal((await (await request('/admin/email/status', { headers: { cookie: adminCookie } })).json()).provider.status, 'ok')
 
     // ---- A different 401 (bad credentials) is not treated as a provider block.
     fakeResend.state.mode = 'badkey'
-    assert.equal((await register('badkey@example.edu', 'S-BK')).status, 201)
+    assert.equal((await register('badkey@example.edu', '2002')).status, 201)
     assert.equal(effectiveProviderStatus(await getProviderStatus({ fresh: true }), 'resend'), 'ok')
     assert.equal((await User.findOne({ email: 'badkey@example.edu' }).lean()).emailVerification.deliveryError, 'auth_failed')
 
     // ---- 1. Resend 403 "domain is not verified" is recognised and recorded as a provider-level block.
     fakeResend.state.mode = 'blocked'
-    assert.equal((await register('first@example.edu', 'S-1')).status, 201, 'registration still succeeds')
+    assert.equal((await register('first@example.edu', '2003')).status, 201, 'registration still succeeds')
     const first = await User.findOne({ email: 'first@example.edu' }).lean()
     assert.equal(first.emailVerified, false, 'never marked verified/delivered')
     assert.deepEqual([first.emailVerification.deliveryStatus, first.emailVerification.deliveryError], ['failed', 'provider_blocked'])
@@ -100,7 +100,7 @@ test('email provider block (Resend 403 unverified domain): pause, preserve, admi
 
     // ---- 2. While blocked, nothing calls the provider (no retry loop) and nothing is marked sent.
     const sendsAtBlock = fakeResend.state.sends.length
-    assert.equal((await register('second@example.edu', 'S-2')).status, 201)
+    assert.equal((await register('second@example.edu', '2004')).status, 201)
     assert.equal(fakeResend.state.sends.length, sendsAtBlock, 'provider not called while blocked')
     const skipped = await EmailLog.findOne({ recipientEmail: 'second@example.edu' }).lean()
     assert.deepEqual([skipped.status, skipped.errorCode], ['skipped', 'provider_blocked'])

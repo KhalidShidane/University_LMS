@@ -18,7 +18,7 @@ import { hashPassword } from '../services/password.service.js'
 import { setEmailTransport } from '../services/email/email.service.js'
 import { EmailTransportError } from '../services/email/transportError.js'
 import { processEmailQueueOnce } from '../services/email/emailQueue.service.js'
-import { applicableReminderWindow, emailAssignmentPublished, emailCoursePublished, emailLessonMaterialsAdded, emailLessonPublished, emailQuizPublished, queueEmailTask, scanDeadlineReminders } from '../services/emailNotifications.service.js'
+import { applicableReminderWindow, emailAssignmentPublished, emailLessonMaterialsAdded, emailLessonPublished, emailQuizPublished, queueEmailTask, scanDeadlineReminders } from '../services/emailNotifications.service.js'
 
 const HOUR = 3600 * 1000
 const ENV_KEYS = ['NODE_ENV', 'JWT_SECRET', 'CLIENT_URL', 'APP_URL', 'EMAIL_DAILY_LIMIT', 'EMAIL_MONTHLY_LIMIT', 'EMAIL_DAILY_RESERVED_FOR_ACCOUNT', 'EMAIL_MAX_PER_MINUTE', 'EMAIL_QUEUE_INTERVAL_MS']
@@ -103,17 +103,14 @@ test('email notifications: events, recipients, queue, quota, retries, reminders,
     assert.match(quizEmail.text, /https:\/\/lms\.example\.edu\/app\/quizzes/)
     assert.equal((await processEmailQueueOnce()).sent, 0, 'sent jobs are never resent')
 
-    // ---- B. Assignment, lesson, material, and course events.
+    // ---- B. Assignment, lesson, and material events (course assignment sends no email).
     const course = await Course.create({ name: 'Molecular Biology', courseCode: 'MB101', description: 'Intro to molecules', teachingAssignments: [{ teacher: teacher._id, class: classA._id, department: department._id }], class: classA._id, department: department._id, teacher: teacher._id })
     const lesson = await Lesson.create({ title: 'Cell Membranes', summary: 'How membranes work', class: classA._id, course: course._id, createdBy: teacher._id, status: 'published' })
     const assignment = await Assignment.create({ title: 'Membrane Essay', description: 'Write 500 words.', class: classA._id, lesson: lesson._id, createdBy: teacher._id, dueDate: new Date(Date.now() + 5 * 24 * HOUR), status: 'published' })
     await emailAssignmentPublished(assignment._id)
     await emailLessonPublished(lesson._id)
-    await emailCoursePublished(course._id, classA._id)
     assert.deepEqual(await recipients('assignment-published'), ['omar.noor@example.edu', 'sara.ali@example.edu'])
     assert.deepEqual(await recipients('lesson-published'), ['omar.noor@example.edu', 'sara.ali@example.edu'])
-    assert.deepEqual(await recipients('course-published'), ['omar.noor@example.edu', 'sara.ali@example.edu'])
-    assert.equal(await emailCoursePublished(course._id, classB._id), 0, 'course not assigned to class B: no emails there')
     // Materials uploaded right after publishing are covered by the lesson email; later uploads notify.
     await Lesson.updateOne({ _id: lesson._id }, { $push: { materials: { originalName: 'slides.pdf', storedName: 'x1.pdf', mimeType: 'application/pdf', size: 10 } } })
     const withMaterial = await Lesson.findById(lesson._id).lean()
@@ -125,7 +122,7 @@ test('email notifications: events, recipients, queue, quota, retries, reminders,
     // ---- F. Preferences: defaults, update, validation, and send-time enforcement.
     const prefs = await request('/profile/notification-preferences', { headers: { cookie: s1Cookie } })
     assert.equal(prefs.status, 200)
-    assert.deepEqual((await prefs.json()).email, { quizzes: true, assignments: true, lessons: true, materials: true, courses: true, announcements: true, reminders: true })
+    assert.deepEqual((await prefs.json()).email, { quizzes: true, assignments: true, lessons: true, materials: true, announcements: true, reminders: true })
     const turnOff = await request('/profile/notification-preferences', { method: 'PUT', headers: { cookie: s1Cookie }, body: JSON.stringify({ email: { lessons: false } }) })
     assert.equal((await turnOff.json()).email.lessons, false)
     assert.equal((await request('/profile/notification-preferences', { method: 'PUT', headers: { cookie: s1Cookie }, body: JSON.stringify({ email: { email_verification: false } }) })).status, 400, 'mandatory emails cannot be disabled')
@@ -133,11 +130,11 @@ test('email notifications: events, recipients, queue, quota, retries, reminders,
     assert.equal((await request('/profile/notification-preferences')).status, 401)
 
     const batch = await processEmailQueueOnce()
-    assert.equal(batch.sent, 7, '8 queued, 1 cancelled by the new preference')
+    assert.equal(batch.sent, 5, '6 queued, 1 cancelled by the new preference')
     const cancelled = await EmailJob.findOne({ dedupeKey: `lesson-published:${lesson._id}:${s1._id}` }).lean()
     assert.deepEqual([cancelled.status, cancelled.cancelReason], ['cancelled', 'preference_disabled'])
     const subjects = outbox.map((message) => message.subject)
-    for (const expected of [/New assignment: Membrane Essay/, /New lesson: Cell Membranes/, /New course available: Molecular Biology/, /New course material: Cell Membranes/]) assert.ok(subjects.some((subject) => expected.test(subject)), `${expected} sent`)
+    for (const expected of [/New assignment: Membrane Essay/, /New lesson: Cell Membranes/, /New course material: Cell Membranes/]) assert.ok(subjects.some((subject) => expected.test(subject)), `${expected} sent`)
     const assignmentEmail = outbox.find((message) => /New assignment/.test(message.subject))
     assert.match(assignmentEmail.html, /Molecular Biology/, 'assignment shows its course')
     assert.match(assignmentEmail.text, new RegExp(`/app/assignments/${assignment._id}`))

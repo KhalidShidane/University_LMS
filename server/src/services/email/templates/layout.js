@@ -96,15 +96,6 @@ export function renderEmailLayout({ preheader = '', heading, subheading = '', bo
             </tr></table>
           </td></tr>` : ''
 
-  const fallback = action ? `
-          <tr><td style="padding:0 0 8px">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${brand.soft};border:1px dashed #c9d3e2;border-radius:12px"><tr><td style="padding:16px 18px">
-              <div style="font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${brand.muted};padding:0 0 6px">Button not working?</div>
-              <div style="font-size:13px;line-height:1.5;color:${brand.body};padding:0 0 8px">Copy this link and paste it into your browser:</div>
-              <a href="${escapeHtml(action.url)}" target="_blank" style="font-family:Consolas,Menlo,monospace;font-size:12.5px;line-height:1.55;color:${brand.primaryDark};word-break:break-all;text-decoration:underline">${escapeHtml(action.url)}</a>
-            </td></tr></table>
-          </td></tr>` : ''
-
   const noteRows = notes.length ? `
           <tr><td style="padding:24px 0 0">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid ${brand.line};padding:20px 0 0">
@@ -160,7 +151,7 @@ export function renderEmailLayout({ preheader = '', heading, subheading = '', bo
         <tr><td ${centered ? 'align="center" ' : ''}class="title" style="padding:0 0 ${subheading ? '8px' : '18px'};font-size:26px;line-height:1.25;font-weight:800;letter-spacing:-.2px;color:${brand.ink};${centered ? 'text-align:center;' : ''}">${escapeHtml(heading)}</td></tr>
         ${subheading ? `<tr><td ${centered ? 'align="center" ' : ''}style="padding:0 0 22px;font-size:15px;line-height:1.5;color:${brand.muted};${centered ? 'text-align:center;' : ''}">${escapeHtml(subheading)}</td></tr>` : ''}
         <tr><td style="padding:0 0 26px;font-size:15.5px;line-height:1.75;color:${brand.body}">${bodyHtml}</td></tr>
-        ${button}${notice}${fallback}${noteRows}${footnote}
+        ${button}${notice}${noteRows}${footnote}
       </table>
     </td></tr>
 

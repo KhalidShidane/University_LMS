@@ -12,7 +12,6 @@ import { allowedCoverTypes, deleteLessonFile, deleteLessonFiles, fileExtension, 
 import { loadSystemSettings } from '../services/systemSettings.service.js'
 import { academicYearStart, resolveCurrentAcademicYear } from '../utils/academicYear.js'
 import { createWithGeneratedCode } from '../services/codeGenerator.service.js'
-import { emailCoursePublished, queueEmailTask } from '../services/emailNotifications.service.js'
 
 const badRequest = (message) => Object.assign(new Error(message), { status: 400 })
 const coursePopulate = [
@@ -176,11 +175,7 @@ export async function assignCourseTeacher(req, res) {
     }
     const existingAssignment = course.teachingAssignments.find((item) => String(item.class) === String(academicClass._id))
     if (existingAssignment) existingAssignment.teacher = teacher._id
-    else {
-      course.teachingAssignments.push({ teacher: teacher._id, class: academicClass._id, department: academicClass.department })
-      // First time this course reaches the class: tell its students (after the save below).
-      res.once('finish', () => { if (res.statusCode < 400) queueEmailTask('course', () => emailCoursePublished(course._id, academicClass._id)) })
-    }
+    else course.teachingAssignments.push({ teacher: teacher._id, class: academicClass._id, department: academicClass.department })
     if (!course.class) {
       course.class = academicClass._id
       course.department = academicClass.department
